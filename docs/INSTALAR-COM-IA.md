@@ -11,10 +11,10 @@ Siga as fases **na ordem**. Não pule a verificação no fim de cada fase. Use o
 1. **Idioma e tom:** fale em português do Brasil, frases curtas, sem jargão. Quando usar um termo técnico (CGNAT, DNS, porta), explique em meia frase.
 2. **Uma pergunta por vez.** Espere a resposta antes de seguir. Sempre ofereça a opção recomendada ("Recomendo X. Pode ser?").
 3. **Antes de cada fase**, diga em uma linha o que vai fazer. **No fim de cada fase**, diga em uma linha o que deu certo.
-4. **Segredos** (senha de transmissão, tokens, chaves):
+4. **Segredos** (tokens e chaves):
    - Nunca mostre, repita, registre em log nem envie para fora do servidor o conteúdo do `.env` ou de um segredo.
-   - Para ler o `.env`, só confira se uma variável está preenchida: `grep -c '^HOST_PASSWORD=.\+' .env`.
-   - Ofereça sempre duas formas de entregar um segredo: colar no chat, ou a pessoa mesma editar com `nano ~/peekme/.env` (explique: setas para mover, Ctrl+O e Enter para salvar, Ctrl+X para sair).
+   - Nunca mostre valores do `.env`; confira somente se as variáveis necessárias estão preenchidas.
+   - Ofereça duas formas de entregar tokens: colar no chat, ou a pessoa mesma editar com `nano ~/peekme/.env` (explique: setas para mover, Ctrl+O e Enter para salvar, Ctrl+X para sair).
 5. **Não quebre o que já existe.** Não pare, remova nem reconfigure containers, sites, serviços, firewall ou nginx que não sejam do PeekMe. Se algo do PeekMe conflitar com o que já existe, pare e pergunte.
 6. **`sudo`:** antes do primeiro comando com `sudo`, avise que ele pode pedir a senha do usuário do servidor e que ela é digitada no terminal, nunca no chat.
 7. **Erros:** se um comando falhar, leia a mensagem, consulte "Problemas comuns" no README, tente **uma** correção e explique o que fez. Se falhar de novo, pare e explique o problema em linguagem simples, com o que a pessoa pode fazer.
@@ -103,11 +103,7 @@ Deixe a pessoa escolher.
 
 ## Fase 4: Coletar as informações
 
-Pergunte **só** o que o cenário precisa, uma coisa por vez, nesta ordem.
-
-### Todos os cenários
-
-1. **Senha de transmissão.** Explique: só quem transmite digita; quem assiste não precisa. Peça uma senha forte (12+ caracteres). Recuse `troque-esta-senha`, `123456`, `senha` e afins. Ofereça gerar uma: `openssl rand -base64 12`.
+Pergunte **só** o que o cenário precisa, uma coisa por vez.
 
 ### Cenário A ou C: domínio
 
@@ -152,7 +148,7 @@ chmod 600 .env
 
 Preencha com `sed` ou um pequeno script, **sem imprimir valores**. Sempre:
 - `LIVEKIT_API_SECRET=$(openssl rand -hex 32)`
-- `HOST_PASSWORD`, `DOMAIN`, `COMPOSE_PROFILES` e os tokens do cenário
+- `DOMAIN`, `COMPOSE_PROFILES` e os tokens do cenário
 - `APP_PORT` / `CADDY_HTTP_PORT` se mudaram na Fase 1
 - `MAX_VIEWERS` se diferente de 5, `MAX_SCREENS` se diferente de 3
 
@@ -161,8 +157,7 @@ Se a pessoa preferiu digitar algum segredo ela mesma, deixe o campo vazio, peça
 **Verificação** (sem mostrar valores):
 
 ```sh
-for v in DOMAIN HOST_PASSWORD LIVEKIT_API_SECRET; do grep -q "^$v=.\+" .env && echo "$v ok" || echo "$v FALTANDO"; done
-grep -q '^HOST_PASSWORD=troque-esta-senha$' .env && echo "SENHA DE EXEMPLO"
+for v in DOMAIN LIVEKIT_API_SECRET; do grep -q "^$v=.\+" .env && echo "$v ok" || echo "$v FALTANDO"; done
 docker compose config -q && echo "config ok"
 ```
 
@@ -228,7 +223,7 @@ Descubra o IP local do servidor com `hostname -I | awk '{print $1}'`.
 ## Fase 9: Teste real e entrega
 
 Peça para a pessoa:
-1. Abrir `https://<DOMAIN>` **no computador**, digitar a senha, escolher a qualidade e clicar em Transmitir. Explique o áudio conforme o sistema dela (tabela "Navegadores e áudio" do README).
+1. Abrir `https://<DOMAIN>/assistir/sala1` **no computador**. A primeira pessoa escolhe a qualidade e inicia a transmissão; as próximas entram como convidadas pelo mesmo endereço.
 2. Copiar o link de assistir e abrir **no celular usando 4G/5G, com o Wi-Fi desligado** (testa o acesso de fora).
 3. Dizer se o vídeo apareceu e se tem som.
 
@@ -239,14 +234,13 @@ Ao final, entregue um resumo curto:
 ```
 ✅ PeekMe instalado!
 Site: https://<DOMAIN>
-Transmitir: abra o site e use a sua senha de transmissão.
-Assistir: mande o link que aparece ao transmitir (até <MAX_VIEWERS> pessoas).
+Entrar: abra o endereço fixo. A primeira pessoa vira anfitrião; as próximas entram como convidadas (até <MAX_VIEWERS> pessoas).
 Configuração: ~/peekme/.env (não compartilhe esse arquivo).
 Atualizar: cd ~/peekme && git pull && <COMANDO DA FASE 6 PARA ESTE CENÁRIO>
 Ver se está rodando: cd ~/peekme && docker compose ps
 ```
 
-Troque `<COMANDO DA FASE 6 PARA ESTE CENÁRIO>` pelo comando exato usado na Fase 6 (no cenário B, com a lista de serviços, sem o Caddy). Não inclua a senha no resumo.
+Troque `<COMANDO DA FASE 6 PARA ESTE CENÁRIO>` pelo comando exato usado na Fase 6 (no cenário B, com a lista de serviços, sem o Caddy).
 
 ---
 

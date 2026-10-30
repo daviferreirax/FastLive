@@ -2,12 +2,13 @@
 
 Compartilhamento de tela simples e auto-hospedado, no estilo do "Go Live" do Discord, mas sem chat, sem servidores e sem contas. Uma pessoa transmite a tela (com áudio), manda um link, e os amigos assistem pelo navegador.
 
-- **Transmitir:** abra o site, digite a senha de transmissão, escolha a tela, janela ou aba.
-- **Assistir:** abra o link `https://seu-dominio/assistir/xxxxxxxx`, digite um nome (opcional) e clique em Assistir. Funciona no celular também. `STATIC_WATCH_SLUG` permite usar um endereço fixo em todas as transmissões.
+- **Um link para todos:** abra `https://seu-dominio/assistir/sala1`. Se a sala estiver livre, você será anfitrião; se alguém já estiver nela, entrará como convidado.
+- **Transmitir:** o anfitrião escolhe a tela, janela ou aba e inicia. Não há senha de transmissão.
+- **Assistir:** convidados podem informar um nome opcional e entrar pelo mesmo link. Funciona no celular também.
 - **Qualidade:** 720p ou 1080p a 60 fps, escolhida na hora de transmitir. Quem tem internet fraca recebe automaticamente uma versão menor.
 - **Áudio:** jogos e vídeos com som (veja [Navegadores e áudio](#navegadores-e-áudio)).
 - **Várias telas na mesma sala.** Quem assiste também pode clicar em **Transmitir minha tela** (sem senha). Com mais de uma tela no ar, cada pessoa escolhe qual ver em destaque ou vê todas em grade. O limite padrão é 3 telas ao mesmo tempo (`MAX_SCREENS`).
-- **Uma sala por vez.** Quem tem a senha cria a sala; se já houver uma no ar, o site pergunta se você quer encerrá-la. Quando quem criou a sala para, ela fecha para todos.
+- **Uma sala por vez.** A primeira pessoa que abre o link é anfitriã; as demais entram como convidadas. Quando o anfitrião para, a sala fecha para todos e a próxima pessoa que abrir o link poderá ser anfitriã.
 - Roda inteiro em Docker num servidor Linux, inclusive numa Raspberry Pi. Transmitir e assistir funciona em qualquer sistema, inclusive Windows (veja os [Requisitos](#requisitos)).
 
 > Licença MIT. Use, modifique e compartilhe à vontade.
@@ -104,7 +105,7 @@ Prefere fazer à mão? Siga a [instalação manual](#instalação-manual-passo-a
 ```
  Quem transmite                         Seu servidor (Docker)                    Quem assiste
  (navegador)                                                                     (navegador)
-      │   site + senha (HTTPS)   ┌──────────────────────────────┐   site (HTTPS)       │
+      │  site (HTTPS)            ┌──────────────────────────────┐   site (HTTPS)       │
       ├─────────────────────────►│ caddy ──► app (site, tokens) │◄─────────────────────┤
       │                          │                │             │                      │
       │   vídeo e áudio (WebRTC) │             livekit          │  vídeo e áudio       │
@@ -194,7 +195,7 @@ A porta 80 **não** é usada: o certificado HTTPS é emitido pela própria 443. 
 sh setup.sh
 ```
 
-O script pergunta o subdomínio do DuckDNS (ou o domínio completo, se for outro), o token do DuckDNS e a senha de transmissão, e cria o arquivo `.env` com um segredo aleatório para o LiveKit. Se preferir fazer à mão: `cp .env.example .env` e edite (veja [as configurações](#todas-as-configurações-do-env)).
+O script pergunta o subdomínio do DuckDNS (ou o domínio completo, se for outro) e o token do DuckDNS, e cria o arquivo `.env` com um segredo aleatório para o LiveKit. Se preferir fazer à mão: `cp .env.example .env` e edite (veja [as configurações](#todas-as-configurações-do-env)).
 
 **A4. Suba**
 
@@ -246,7 +247,6 @@ Preencha:
 
 ```ini
 DOMAIN=peekme.seu-dominio.com
-HOST_PASSWORD=uma-senha-boa
 LIVEKIT_API_SECRET=   # cole o resultado de: openssl rand -hex 32
 COMPOSE_PROFILES=tunnel
 CLOUDFLARE_TUNNEL_TOKEN=<token do passo B1>
@@ -285,11 +285,10 @@ O arquivo `.env` fica na pasta do projeto e **nunca** deve ir para o git (já es
 | Variável | Obrigatória | Para que serve |
 |---|---|---|
 | `DOMAIN` | sim | Domínio do site, sem `https://` |
-| `HOST_PASSWORD` | sim | Senha para transmitir. Quem assiste não precisa |
 | `LIVEKIT_API_KEY` | sim | Nome da chave do LiveKit (pode ficar `peekme`) |
 | `LIVEKIT_API_SECRET` | sim | Segredo do LiveKit, 32+ caracteres. Gere com `openssl rand -hex 32` |
 | `MAX_VIEWERS` | não | Máximo de espectadores (padrão 5) |
-| `MAX_SCREENS` | não | Máximo de telas no ar ao mesmo tempo, contando a de quem criou a sala (padrão 3). `1` = só quem tem a senha transmite |
+| `MAX_SCREENS` | não | Máximo de telas no ar ao mesmo tempo, contando a de quem chegou primeiro (padrão 3). `1` = somente o anfitrião transmite |
 | `STATIC_WATCH_SLUG` | não | Apelido fixo do endereço para assistir (1 a 32 letras ou números); vazio mantém os links aleatórios. Quem tiver o endereço pode assistir quando houver transmissão |
 | `APP_PORT` | não | Porta interna do site (padrão 3077) |
 | `NODE_IP` | não | IP público fixo. Vazio = descobre sozinho ao iniciar |
@@ -327,10 +326,9 @@ Dicas:
 
 ## Uso no dia a dia
 
-- **Trocar a senha:** edite `HOST_PASSWORD` no `.env` e rode `docker compose up -d`.
 - **Mais ou menos espectadores:** mude `MAX_VIEWERS`. Faça a conta com o seu upload (tabela em [Requisitos](#requisitos)).
 - **Espectadores transmitindo:** quem assiste pelo computador vê o botão **Transmitir minha tela** enquanto houver vaga (`MAX_SCREENS`). Cada tela é enviada pelo servidor a quem estiver vendo, então mais telas pesam no upload. Para poupar internet, quem assiste só recebe o vídeo das telas que aparecem na página: com uma tela em destaque, as outras não chegam; na grade, cada uma vem numa versão menor. Para desligar, use `MAX_SCREENS=1`.
-- **Endereço fixo para assistir:** defina `STATIC_WATCH_SLUG=sala1` para usar sempre `https://seu-dominio/assistir/sala1`. A sala de vídeo interna continua usando um código aleatório; isso mantém os pedidos de compartilhar tela ligados à sala correta. Apague o valor para voltar aos links aleatórios.
+- **Endereço fixo:** defina `STATIC_WATCH_SLUG=sala1` para usar o mesmo link como anfitrião ou convidado: `https://seu-dominio/assistir/sala1`.
 - **Encerrar:** clique em Parar no site. Se a aba for fechada, a sala some sozinha em cerca de um minuto.
 - **Parar o servidor:** `docker compose down`. Para ligar de novo: `docker compose up -d` (no cenário B, liste os serviços como no passo B4).
 
@@ -392,9 +390,8 @@ O PeekMe usa a rede do host. Se a 3077 ou a 8780 já estiverem ocupadas, mude `A
 
 ## Segurança
 
-- **Nunca publique o `.env`** (nem prints dele). Ele tem a senha de transmissão, o segredo do LiveKit e as chaves do Cloudflare/DuckDNS. Se algum vazar, gere outro e apague o antigo no painel correspondente.
-- Use uma senha de transmissão forte. O site bloqueia por 1 minuto quem erra a senha 5 vezes seguidas.
-- Os links de assistir são aleatórios e só funcionam enquanto a transmissão está no ar. Qualquer pessoa com o link pode assistir, então compartilhe só com quem você quer.
+- **Nunca publique o `.env`** (nem prints dele). Ele tem o segredo do LiveKit e as chaves do Cloudflare/DuckDNS. Se algum vazar, gere outro e apague o antigo no painel correspondente.
+- O primeiro visitante vira anfitrião sem senha. Qualquer pessoa que abra o link pode entrar como convidado enquanto houver transmissão; compartilhe o endereço apenas com seus amigos.
 - Achou uma falha de segurança? Relate em privado, como explicado em [SECURITY.md](SECURITY.md).
 
 ---
@@ -403,7 +400,7 @@ O PeekMe usa a rede do host. Se a 3077 ou a 8780 já estiverem ocupadas, mude `A
 
 O site fica em `app/` (Node.js 20+, sem framework):
 
-- `app/server.js`: servidor HTTP, senha, tokens do LiveKit, TURN do Cloudflare e o repasse de `/rtc`.
+- `app/server.js`: servidor HTTP, escolha automática de anfitrião/convidados, tokens do LiveKit, TURN do Cloudflare e o repasse de `/rtc`.
 - `app/public/`: a página (`index.html`, `app.js`, `style.css`), usando o [livekit-client](https://github.com/livekit/client-sdk-js).
 
 Para rodar fora do Docker, suba um LiveKit local em modo de desenvolvimento e o site:
@@ -411,7 +408,7 @@ Para rodar fora do Docker, suba um LiveKit local em modo de desenvolvimento e o 
 ```sh
 docker run --rm -p 7880:7880 -p 7881:7881 -p 7882:7882/udp livekit/livekit-server:v1.13 --dev
 cd app && npm install
-LIVEKIT_API_KEY=devkey LIVEKIT_API_SECRET=secret HOST_PASSWORD=teste node server.js
+LIVEKIT_API_KEY=devkey LIVEKIT_API_SECRET=secret node server.js
 ```
 
 Abra http://localhost:3077 (o navegador permite compartilhar tela em `localhost` sem HTTPS).
