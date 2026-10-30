@@ -22,3 +22,18 @@
 	# Site do PeekMe
 	reverse_proxy 127.0.0.1:{$APP_PORT:3077}
 }
+
+# Ambiente de teste: mesmo Caddy e LiveKit, app separado na porta 3078.
+teste.exemplo.duckdns.org {
+	tls {
+		issuer acme {
+			disable_http_challenge
+		}
+	}
+	encode gzip
+
+	@livekit path /rtc /rtc/*
+	reverse_proxy @livekit 127.0.0.1:7880
+
+	reverse_proxy 127.0.0.1:3078
+}
