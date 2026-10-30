@@ -12,14 +12,13 @@ const VERSION = require('./package.json').version;
 const PORT = Number(process.env.PORT || 3077);
 const API_KEY = process.env.LIVEKIT_API_KEY;
 const API_SECRET = process.env.LIVEKIT_API_SECRET;
-const HOST_PASSWORD = process.env.HOST_PASSWORD;
 // Endereço interno do LiveKit (para criar/encerrar salas).
 const LIVEKIT_HTTP = process.env.LIVEKIT_HTTP_URL || 'http://127.0.0.1:7880';
 // Endereço que o navegador usa. Vazio = mesmo domínio do site (o Caddy encaminha /rtc).
 const LIVEKIT_PUBLIC_URL = process.env.LIVEKIT_PUBLIC_URL || '';
 const MAX_VIEWERS = Number(process.env.MAX_VIEWERS || 5);
 // Quantas telas podem estar no ar ao mesmo tempo, contando a de quem criou a sala.
-// 1 = só quem tem a senha transmite; quem assiste não ganha o botão de transmitir.
+// 1 = somente o anfitrião transmite; valores maiores liberam convidados também.
 const MAX_SCREENS = Math.max(1, Number(process.env.MAX_SCREENS || 3));
 // Apelido opcional do link público; a sala LiveKit continua usando um código aleatório.
 const STATIC_WATCH_SLUG = String(process.env.STATIC_WATCH_SLUG || '').trim().toLowerCase();
@@ -28,7 +27,7 @@ if (STATIC_WATCH_SLUG && !/^[a-z0-9]{1,32}$/.test(STATIC_WATCH_SLUG)) {
   process.exit(1);
 }
 
-for (const [name, value] of Object.entries({ LIVEKIT_API_KEY: API_KEY, LIVEKIT_API_SECRET: API_SECRET, HOST_PASSWORD })) {
+for (const [name, value] of Object.entries({ LIVEKIT_API_KEY: API_KEY, LIVEKIT_API_SECRET: API_SECRET })) {
   if (!value) { console.error(`Falta a variável ${name} (veja o arquivo .env)`); process.exit(1); }
 }
 
@@ -39,25 +38,15 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 const ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789';
 const HOST_ID = 'host';
 
-// Só existe uma transmissão por vez.
-let current = null; // { room, hostSecret }
+// Uma única reserva/sala por vez. O primeiro visitante recebe o papel de anfitrião.
+let current = null; // { room, hostSecret, lastHeartbeat }
+const HOST_RESERVATION_TTL_MS = 90_000;
+let sessionQueue = Promise.resolve();
 
-// Limite simples de tentativas de senha por IP.
-const failures = new Map(); // ip -> { count, until }
-function blocked(ip) {
-  const f = failures.get(ip);
-  return f && f.count >= 5 && Date.now() < f.until;
-}
-function fail(ip) {
-  const f = failures.get(ip);
-  if (!f || Date.now() > f.until) failures.set(ip, { count: 1, until: Date.now() + 60_000 });
-  else f.count++;
-}
-
-function checkPassword(given) {
-  const a = crypto.createHash('sha256').update(String(given || '')).digest();
-  const b = crypto.createHash('sha256').update(HOST_PASSWORD).digest();
-  return crypto.timingSafeEqual(a, b);
+function serializeSession(operation) {
+  const result = sessionQueue.then(operation);
+  sessionQueue = result.catch(() => {});
+  return result;
 }
 
 // Chave que prova que quem pede para transmitir é mesmo aquele espectador.
@@ -138,37 +127,68 @@ function readBody(req) {
   });
 }
 
-function clientIp(req) {
-  return (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress;
-}
-
-// POST /api/start { password, force } -> { room, token, url }
-async function start(req, res) {
-  const ip = clientIp(req);
-  if (blocked(ip)) return json(res, 429, { error: 'Muitas tentativas. Espere um minuto.' });
-  const body = await readBody(req);
-  if (!checkPassword(body.password)) { fail(ip); return json(res, 401, { error: 'Senha incorreta.' }); }
-  failures.delete(ip);
-
-  if (current && await isLive(current.room)) {
-    if (!body.force) return json(res, 409, { error: 'Já existe uma transmissão no ar.' });
-    await rooms.deleteRoom(current.room).catch(() => {});
-  }
-
+async function createHostSession() {
   const room = newCode();
   await rooms.createRoom({ name: room, maxParticipants: MAX_VIEWERS + 1, emptyTimeout: 60, departureTimeout: 20 });
-  current = { room, hostSecret: crypto.randomBytes(16).toString('hex') };
+  current = { room, hostSecret: crypto.randomBytes(16).toString('hex'), lastHeartbeat: Date.now() };
   const jwt = await token(room, HOST_ID, 'Anfitrião', { canPublish: true, canSubscribe: true, canPublishData: false });
-  json(res, 200, { room, watchCode: STATIC_WATCH_SLUG || room, token: jwt, url: LIVEKIT_PUBLIC_URL, iceServers: await iceServers(), hostSecret: current.hostSecret, maxViewers: MAX_VIEWERS, maxScreens: MAX_SCREENS });
+  return { role: 'host', room, watchCode: STATIC_WATCH_SLUG || room, token: jwt, url: LIVEKIT_PUBLIC_URL, iceServers: await iceServers(), hostSecret: current.hostSecret, maxViewers: MAX_VIEWERS, maxScreens: MAX_SCREENS };
+}
+
+async function createViewerSession(room, name, hostLive = true) {
+  const list = await rooms.listParticipants(room);
+  if (list.filter(p => p.identity !== HOST_ID).length >= MAX_VIEWERS) {
+    const err = new Error(`A sala está cheia (máximo de ${MAX_VIEWERS} pessoas assistindo).`);
+    err.status = 403;
+    throw err;
+  }
+  const displayName = String(name || '').trim().slice(0, 24) || 'Alguém';
+  const identity = `v-${crypto.randomBytes(6).toString('hex')}`;
+  const jwt = await token(room, identity, displayName, { canPublish: false, canSubscribe: true, canPublishData: false });
+  return { role: 'viewer', room, hostLive, token: jwt, url: LIVEKIT_PUBLIC_URL, iceServers: await iceServers(), identity, key: viewerKey(room, identity), maxScreens: MAX_SCREENS };
+}
+
+// O servidor escolhe o papel atomicamente, inclusive quando várias pessoas abrem o link juntas.
+async function enter(req, res) {
+  const body = await readBody(req);
+  const session = await serializeSession(async () => {
+    if (current) {
+      const hostLive = await isLive(current.room);
+      const reservationFresh = Date.now() - current.lastHeartbeat < HOST_RESERVATION_TTL_MS;
+      if (hostLive || reservationFresh) return createViewerSession(current.room, body.name, hostLive);
+      await rooms.deleteRoom(current.room).catch(() => {});
+      current = null;
+    }
+    return createHostSession();
+  });
+  json(res, 200, session);
+}
+
+// Mantém a reserva enquanto a página do anfitrião estiver aberta, mesmo antes de transmitir.
+async function heartbeat(req, res) {
+  const body = await readBody(req);
+  const result = await serializeSession(async () => {
+    if (!current || body.room !== current.room || body.hostSecret !== current.hostSecret) {
+      return { status: 403, body: { error: 'A reserva de anfitrião expirou. Abra o link novamente.' } };
+    }
+    current.lastHeartbeat = Date.now();
+    return { status: 200, body: { ok: true } };
+  });
+  json(res, result.status, result.body);
 }
 
 // POST /api/stop { room, hostSecret }
 async function stop(req, res) {
   const body = await readBody(req);
-  if (!current || body.room !== current.room || body.hostSecret !== current.hostSecret) return json(res, 403, { error: 'Não autorizado.' });
-  await rooms.deleteRoom(current.room).catch(() => {});
-  current = null;
-  json(res, 200, { ok: true });
+  const result = await serializeSession(async () => {
+    if (!current || body.room !== current.room || body.hostSecret !== current.hostSecret) {
+      return { status: 403, body: { error: 'Não autorizado.' } };
+    }
+    await rooms.deleteRoom(current.room).catch(() => {});
+    current = null;
+    return { status: 200, body: { ok: true } };
+  });
+  json(res, result.status, result.body);
 }
 
 // POST /api/watch { room, name } -> { token, url }
@@ -179,17 +199,8 @@ async function watch(req, res) {
   if (!current || room !== current.room || !await isLive(room)) {
     return json(res, 404, { error: 'Essa transmissão não está no ar.' });
   }
-  const list = await rooms.listParticipants(room);
-  if (list.filter(p => p.identity !== HOST_ID).length >= MAX_VIEWERS) {
-    return json(res, 403, { error: `A sala está cheia (máximo de ${MAX_VIEWERS} pessoas assistindo).` });
-  }
-  const name = String(body.name || '').trim().slice(0, 24) || 'Alguém';
-  const identity = `v-${crypto.randomBytes(6).toString('hex')}`;
-  // Quem assiste entra sem poder publicar; a permissão vem de /api/share, que controla o limite de telas.
-  const jwt = await token(room, identity, name, { canPublish: false, canSubscribe: true, canPublishData: false });
-  // Devolve o código real da sala: /api/share e /api/unshare validam esse valor,
-  // não o apelido público que aparece no endereço do navegador.
-  json(res, 200, { room, token: jwt, url: LIVEKIT_PUBLIC_URL, iceServers: await iceServers(), identity, key: viewerKey(room, identity), maxScreens: MAX_SCREENS });
+  // Quem assiste entra sem poder publicar; /api/share libera a publicação por tela.
+  json(res, 200, await createViewerSession(room, body.name, true));
 }
 
 const SHARE_SOURCES = [TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO, TrackSource.MICROPHONE];
@@ -242,7 +253,7 @@ function serveFile(res, file) {
   });
 }
 
-const routes = { '/api/start': start, '/api/stop': stop, '/api/watch': watch, '/api/share': share, '/api/unshare': unshare };
+const routes = { '/api/enter': enter, '/api/heartbeat': heartbeat, '/api/stop': stop, '/api/watch': watch, '/api/share': share, '/api/unshare': unshare };
 
 // /rtc é a sinalização do LiveKit. O site repassa essas conexões para ele, assim
 // tudo funciona por uma porta só (útil atrás de Cloudflare Tunnel ou outro proxy).
@@ -273,8 +284,8 @@ const server = http.createServer(async (req, res) => {
     if (file.startsWith(PUBLIC_DIR + path.sep) && fs.existsSync(file) && fs.statSync(file).isFile()) return serveFile(res, file);
     serveFile(res, path.join(PUBLIC_DIR, 'index.html'));
   } catch (err) {
-    console.error(err);
-    json(res, 500, { error: 'Erro no servidor. Tente de novo.' });
+    if (err.status) json(res, err.status, { error: err.message });
+    else { console.error(err); json(res, 500, { error: 'Erro no servidor. Tente de novo.' }); }
   }
 });
 

@@ -22,17 +22,10 @@ if [ -n "$duck_sub" ]; then
   read -r duck_token
 fi
 
-printf 'Senha para poder transmitir: '
-stty -echo 2>/dev/null || true
-read -r password
-stty echo 2>/dev/null || true
-echo
-
 secret=$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')
 
 {
   echo "DOMAIN=$domain"
-  echo "HOST_PASSWORD=$password"
   echo "LIVEKIT_API_KEY=peekme"
   echo "LIVEKIT_API_SECRET=$secret"
   echo "MAX_VIEWERS=5"

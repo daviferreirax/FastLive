@@ -127,6 +127,9 @@ function hasAudio(participant) {
 // (adaptiveStream), e na grade cada um recebe uma versão menor: isso poupa o upload do servidor.
 
 let live = null;          // { room, role: 'host' | 'viewer', code, session }
+let hostSession = null;   // reserva do primeiro visitante, válida antes e durante a transmissão
+let hostHeartbeatTimer = null;
+let pendingViewerSession = null;
 const tiles = new Map();  // identity -> { identity, participant, el, video, label, audio, isLocal, hasVideo, videoAt }
 let focus = null;         // identity da tela em destaque; null = grade
 let picked = false;       // a pessoa escolheu a visualização (senão, escolhemos sozinhos)
@@ -288,19 +291,43 @@ function wireRoom(room) {
     .on(RoomEvent.Reconnected, () => setStatus(''));
 }
 
-// ---------- Transmitir (quem tem a senha) ----------
+// ---------- Entrada automática e anfitrião ----------
 
-async function startStream(force = false) {
+function stopHostHeartbeat() {
+  if (hostHeartbeatTimer) clearInterval(hostHeartbeatTimer);
+  hostHeartbeatTimer = null;
+}
+
+function startHostHeartbeat(session) {
+  stopHostHeartbeat();
+  hostHeartbeatTimer = setInterval(async () => {
+    try {
+      await api('/api/heartbeat', { room: session.room, hostSecret: session.hostSecret });
+    } catch (err) {
+      if (err.status !== 403 || hostSession?.hostSecret !== session.hostSecret) return;
+      stopHostHeartbeat();
+      hostSession = null;
+      if (live?.role === 'host') {
+        const room = live.room;
+        live = null;
+        await room.disconnect().catch(() => {});
+        ended('Reserva encerrada', 'Abra o link novamente para entrar na sala.');
+      } else {
+        $('start-error').textContent = 'Sua reserva expirou. Atualize a página para entrar novamente.';
+        $('start-form').querySelector('button').disabled = true;
+      }
+    }
+  }, 20_000);
+}
+
+async function startStream() {
   const btn = $('start-form').querySelector('button');
   $('start-error').textContent = '';
   btn.disabled = true;
-  let session;
-  try {
-    session = await api('/api/start', { password: $('password').value, force });
-  } catch (err) {
+  const session = hostSession;
+  if (!session) {
     btn.disabled = false;
-    if (err.status === 409 && confirm(`${err.message}\n\nEncerrar a transmissão anterior e começar uma nova?`)) return startStream(true);
-    $('start-error').textContent = err.message;
+    $('start-error').textContent = 'Sua reserva não está mais ativa. Atualize a página para entrar novamente.';
     return;
   }
 
@@ -310,11 +337,21 @@ async function startStream(force = false) {
   let video;
   try {
     await room.connect(livekitUrl(session.url), session.token, connectOptions(session));
-    try { localStorage.setItem('peekme-quality', $('quality-select').value); } catch {}
+    room.on(RoomEvent.Disconnected, () => {
+      if (live?.room !== room) return;
+      live = null;
+      hostSession = null;
+      stopHostHeartbeat();
+      api('/api/stop', { room: session.room, hostSecret: session.hostSecret }).catch(() => {});
+      ended('Transmissão encerrada', 'A conexão com o servidor caiu.');
+    });
     video = await publishScreen(room, { quality: $('quality-select').value, audio: $('audio').checked });
   } catch (err) {
     console.error(err);
-    await stopStream(true);
+    live = null;
+    await room.disconnect().catch(() => {});
+    resetStage();
+    show('home');
     btn.disabled = false;
     $('start-error').textContent = err.name === 'NotAllowedError'
       ? 'Você cancelou a escolha da tela.'
@@ -332,8 +369,7 @@ async function startStream(force = false) {
   $('viewer-max').textContent = session.maxViewers;
   room
     .on(RoomEvent.Reconnecting, () => { $('host-status').textContent = 'Conexão instável, reconectando…'; })
-    .on(RoomEvent.Reconnected, () => { $('host-status').textContent = ''; })
-    .on(RoomEvent.Disconnected, () => { if (live?.room === room) { live = null; ended('Transmissão encerrada', 'A conexão com o servidor caiu.'); } });
+    .on(RoomEvent.Reconnected, () => { $('host-status').textContent = ''; });
 
   history.replaceState(null, '', '/');
   document.title = '🔴 Ao vivo · PeekMe';
@@ -360,6 +396,8 @@ async function stopStream(silent = false) {
   if (live?.role !== 'host') return;
   const { room, code, session } = live;
   live = null;
+  hostSession = null;
+  stopHostHeartbeat();
   await api('/api/stop', { room: code, hostSecret: session.hostSecret }).catch(() => {});
   await room.disconnect();
   if (silent) resetStage();
@@ -378,31 +416,23 @@ $('copy').addEventListener('click', async () => {
   $('copy').textContent = 'Copiado!';
   setTimeout(() => { $('copy').textContent = 'Copiar'; }, 1500);
 });
-window.addEventListener('beforeunload', e => { if (live?.role === 'host' || sharing) e.preventDefault(); });
+window.addEventListener('beforeunload', e => { if (hostSession || live?.role === 'host' || sharing) e.preventDefault(); });
 window.addEventListener('pagehide', () => {
-  if (live?.role === 'host') navigator.sendBeacon('/api/stop', new Blob([JSON.stringify({ room: live.code, hostSecret: live.session.hostSecret })], { type: 'application/json' }));
+  if (hostSession) navigator.sendBeacon('/api/stop', new Blob([JSON.stringify({ room: hostSession.room, hostSecret: hostSession.hostSecret })], { type: 'application/json' }));
 });
 
 // ---------- Assistir ----------
 
-async function watch(code) {
+async function watch(session) {
   const btn = $('join-form').querySelector('button');
   $('join-error').textContent = '';
   btn.disabled = true;
-  let session;
-  try {
-    session = await api('/api/watch', { room: code, name: $('name').value });
-  } catch (err) {
-    btn.disabled = false;
-    $('join-error').textContent = err.message;
-    return;
-  }
   try { localStorage.setItem('peekme-name', $('name').value); } catch {}
 
   const room = new Room({ adaptiveStream: true, dynacast: true });
-  // Usa o código real da sala para /api/share e /api/unshare. A URL pode ter
-  // o apelido fixo, mas o servidor autoriza essas operações pela sala real.
-  live = { room, role: 'viewer', code: session.room || code, session };
+  // /api/enter já resolve o apelido público e devolve o código interno real.
+  // /api/share e /api/unshare precisam desse mesmo código.
+  live = { room, role: 'viewer', code: session.room, session };
   wireRoom(room);
   room.on(RoomEvent.Disconnected, () => {
     if (live?.room !== room) return;
@@ -532,13 +562,7 @@ $('tiles').addEventListener('click', e => {
 
 // ---------- Início ----------
 
-const match = location.pathname.match(/^\/assistir\/([a-z0-9]+)\/?$/i);
-if (match) {
-  const code = match[1].toLowerCase();
-  try { $('name').value = localStorage.getItem('peekme-name') || ''; } catch {}
-  $('join-form').addEventListener('submit', e => { e.preventDefault(); watch(code); });
-  show('join');
-} else {
+function prepareHostHome() {
   if (!window.isSecureContext) {
     $('start-error').textContent = 'Para compartilhar a tela, abra o PeekMe pelo endereço com https:// (o seu domínio).';
     $('start-form').querySelector('button').disabled = true;
@@ -547,8 +571,47 @@ if (match) {
     $('start-form').querySelector('button').disabled = true;
   }
   if (isFirefox) {
-    $('start-error').textContent = 'No Firefox, o som vai por uma entrada de áudio: quando ele pedir o microfone, escolha "Monitor of …" (Linux) para enviar o som do computador.';
+    if (!$('start-error').textContent) $('start-error').textContent = 'No Firefox, o som vai por uma entrada de áudio: quando ele pedir o microfone, escolha "Monitor of …" (Linux) para enviar o som do computador.';
   }
-  try { const saved = localStorage.getItem('peekme-quality'); if (QUALITIES[saved]) $('quality-select').value = saved; } catch {}
   show('home');
+  if ($('start-form').querySelector('button').disabled && hostSession) {
+    const session = hostSession;
+    hostSession = null;
+    stopHostHeartbeat();
+    api('/api/stop', { room: session.room, hostSecret: session.hostSecret }).catch(() => {});
+  }
 }
+
+$('join-form').addEventListener('submit', e => {
+  e.preventDefault();
+  if (pendingViewerSession) watch(pendingViewerSession);
+});
+
+async function enterUnifiedLink() {
+  try {
+    $('name').value = localStorage.getItem('peekme-name') || '';
+  } catch {}
+  $('join-title').textContent = 'Conectando ao PeekMe';
+  $('join-description').textContent = 'Verificando se você será o anfitrião ou um convidado…';
+  show('join');
+  try {
+    const session = await api('/api/enter', { name: $('name').value });
+    if (session.role === 'host') {
+      hostSession = session;
+      startHostHeartbeat(session);
+      prepareHostHome();
+      return;
+    }
+    if (session.role !== 'viewer') throw new Error('O servidor não reconheceu o papel desta conexão.');
+    pendingViewerSession = session;
+    $('join-title').textContent = 'Entrar como convidado';
+    $('join-description').textContent = session.hostLive
+      ? 'Já existe alguém na sala. Entre para assistir e, se quiser, compartilhar sua tela.'
+      : 'O anfitrião chegou primeiro e está se preparando. Você pode entrar e aguardar a transmissão.';
+    $('join-form').querySelector('button').textContent = session.hostLive ? 'Assistir transmissão' : 'Entrar e aguardar';
+  } catch (err) {
+    ended('Não foi possível entrar', err.message || 'Atualize a página e tente novamente.');
+  }
+}
+
+enterUnifiedLink();
