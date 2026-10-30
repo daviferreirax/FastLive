@@ -1,0 +1,22 @@
+# Ambiente de teste: roda somente o app e usa o LiveKit compartilhado da produção.
+# O Caddy da produção encaminha o hostname de teste para a porta 3078.
+services:
+  app:
+    build: ./app
+    image: peekme-app-staging
+    container_name: peekme-app-staging
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env.staging
+    environment:
+      PORT: ${APP_PORT:-3078}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+      LIVEKIT_HTTP_URL: http://127.0.0.1:7880
+      HOST_PASSWORD: ${HOST_PASSWORD:?defina HOST_PASSWORD no .env.staging}
+      MAX_VIEWERS: ${MAX_VIEWERS:-5}
+      MAX_SCREENS: ${MAX_SCREENS:-3}
+      STATIC_WATCH_SLUG: ${STATIC_WATCH_SLUG:-}
+      CF_TURN_KEY_ID: ${CF_TURN_KEY_ID:-}
+      CF_TURN_API_TOKEN: ${CF_TURN_API_TOKEN:-}
