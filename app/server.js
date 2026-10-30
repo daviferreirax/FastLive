@@ -21,6 +21,12 @@ const MAX_VIEWERS = Number(process.env.MAX_VIEWERS || 5);
 // Quantas telas podem estar no ar ao mesmo tempo, contando a de quem criou a sala.
 // 1 = só quem tem a senha transmite; quem assiste não ganha o botão de transmitir.
 const MAX_SCREENS = Math.max(1, Number(process.env.MAX_SCREENS || 3));
+// Apelido opcional do link público; a sala LiveKit continua usando um código aleatório.
+const STATIC_WATCH_SLUG = String(process.env.STATIC_WATCH_SLUG || '').trim().toLowerCase();
+if (STATIC_WATCH_SLUG && !/^[a-z0-9]{1,32}$/.test(STATIC_WATCH_SLUG)) {
+  console.error('STATIC_WATCH_SLUG deve ter de 1 a 32 letras ou números.');
+  process.exit(1);
+}
 
 for (const [name, value] of Object.entries({ LIVEKIT_API_KEY: API_KEY, LIVEKIT_API_SECRET: API_SECRET, HOST_PASSWORD })) {
   if (!value) { console.error(`Falta a variável ${name} (veja o arquivo .env)`); process.exit(1); }
@@ -153,7 +159,7 @@ async function start(req, res) {
   await rooms.createRoom({ name: room, maxParticipants: MAX_VIEWERS + 1, emptyTimeout: 60, departureTimeout: 20 });
   current = { room, hostSecret: crypto.randomBytes(16).toString('hex') };
   const jwt = await token(room, HOST_ID, 'Anfitrião', { canPublish: true, canSubscribe: true, canPublishData: false });
-  json(res, 200, { room, token: jwt, url: LIVEKIT_PUBLIC_URL, iceServers: await iceServers(), hostSecret: current.hostSecret, maxViewers: MAX_VIEWERS, maxScreens: MAX_SCREENS });
+  json(res, 200, { room, watchCode: STATIC_WATCH_SLUG || room, token: jwt, url: LIVEKIT_PUBLIC_URL, iceServers: await iceServers(), hostSecret: current.hostSecret, maxViewers: MAX_VIEWERS, maxScreens: MAX_SCREENS });
 }
 
 // POST /api/stop { room, hostSecret }
@@ -168,7 +174,8 @@ async function stop(req, res) {
 // POST /api/watch { room, name } -> { token, url }
 async function watch(req, res) {
   const body = await readBody(req);
-  const room = String(body.room || '').toLowerCase();
+  const requested = String(body.room || '').toLowerCase();
+  const room = STATIC_WATCH_SLUG && requested === STATIC_WATCH_SLUG ? current?.room : requested;
   if (!current || room !== current.room || !await isLive(room)) {
     return json(res, 404, { error: 'Essa transmissão não está no ar.' });
   }
@@ -180,7 +187,9 @@ async function watch(req, res) {
   const identity = `v-${crypto.randomBytes(6).toString('hex')}`;
   // Quem assiste entra sem poder publicar; a permissão vem de /api/share, que controla o limite de telas.
   const jwt = await token(room, identity, name, { canPublish: false, canSubscribe: true, canPublishData: false });
-  json(res, 200, { token: jwt, url: LIVEKIT_PUBLIC_URL, iceServers: await iceServers(), identity, key: viewerKey(room, identity), maxScreens: MAX_SCREENS });
+  // Devolve o código real da sala: /api/share e /api/unshare validam esse valor,
+  // não o apelido público que aparece no endereço do navegador.
+  json(res, 200, { room, token: jwt, url: LIVEKIT_PUBLIC_URL, iceServers: await iceServers(), identity, key: viewerKey(room, identity), maxScreens: MAX_SCREENS });
 }
 
 const SHARE_SOURCES = [TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO, TrackSource.MICROPHONE];

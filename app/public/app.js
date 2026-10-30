@@ -328,7 +328,7 @@ async function startStream(force = false) {
   // Avisa quando o navegador não entregou o áudio (janela ou caixa desmarcada).
   $('host-audio').hidden = !$('audio').checked || hasAudio(room.localParticipant);
 
-  $('share-link').value = `${location.origin}/assistir/${session.room}`;
+  $('share-link').value = `${location.origin}/assistir/${session.watchCode || session.room}`;
   $('viewer-max').textContent = session.maxViewers;
   room
     .on(RoomEvent.Reconnecting, () => { $('host-status').textContent = 'Conexão instável, reconectando…'; })
@@ -400,7 +400,9 @@ async function watch(code) {
   try { localStorage.setItem('peekme-name', $('name').value); } catch {}
 
   const room = new Room({ adaptiveStream: true, dynacast: true });
-  live = { room, role: 'viewer', code, session };
+  // Usa o código real da sala para /api/share e /api/unshare. A URL pode ter
+  // o apelido fixo, mas o servidor autoriza essas operações pela sala real.
+  live = { room, role: 'viewer', code: session.room || code, session };
   wireRoom(room);
   room.on(RoomEvent.Disconnected, () => {
     if (live?.room !== room) return;

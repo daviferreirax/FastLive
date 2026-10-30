@@ -3,7 +3,7 @@
 Compartilhamento de tela simples e auto-hospedado, no estilo do "Go Live" do Discord, mas sem chat, sem servidores e sem contas. Uma pessoa transmite a tela (com áudio), manda um link, e os amigos assistem pelo navegador.
 
 - **Transmitir:** abra o site, digite a senha de transmissão, escolha a tela, janela ou aba.
-- **Assistir:** abra o link `https://seu-dominio/assistir/xxxxxxxx`, digite um nome (opcional) e clique em Assistir. Funciona no celular também.
+- **Assistir:** abra o link `https://seu-dominio/assistir/xxxxxxxx`, digite um nome (opcional) e clique em Assistir. Funciona no celular também. `STATIC_WATCH_SLUG` permite usar um endereço fixo em todas as transmissões.
 - **Qualidade:** 720p ou 1080p a 60 fps, escolhida na hora de transmitir. Quem tem internet fraca recebe automaticamente uma versão menor.
 - **Áudio:** jogos e vídeos com som (veja [Navegadores e áudio](#navegadores-e-áudio)).
 - **Várias telas na mesma sala.** Quem assiste também pode clicar em **Transmitir minha tela** (sem senha). Com mais de uma tela no ar, cada pessoa escolhe qual ver em destaque ou vê todas em grade. O limite padrão é 3 telas ao mesmo tempo (`MAX_SCREENS`).
@@ -290,6 +290,7 @@ O arquivo `.env` fica na pasta do projeto e **nunca** deve ir para o git (já es
 | `LIVEKIT_API_SECRET` | sim | Segredo do LiveKit, 32+ caracteres. Gere com `openssl rand -hex 32` |
 | `MAX_VIEWERS` | não | Máximo de espectadores (padrão 5) |
 | `MAX_SCREENS` | não | Máximo de telas no ar ao mesmo tempo, contando a de quem criou a sala (padrão 3). `1` = só quem tem a senha transmite |
+| `STATIC_WATCH_SLUG` | não | Apelido fixo do endereço para assistir (1 a 32 letras ou números); vazio mantém os links aleatórios. Quem tiver o endereço pode assistir quando houver transmissão |
 | `APP_PORT` | não | Porta interna do site (padrão 3077) |
 | `NODE_IP` | não | IP público fixo. Vazio = descobre sozinho ao iniciar |
 | `CADDY_HTTP_PORT` | não | Porta HTTP interna do Caddy (padrão 8780, não precisa abrir) |
@@ -329,6 +330,7 @@ Dicas:
 - **Trocar a senha:** edite `HOST_PASSWORD` no `.env` e rode `docker compose up -d`.
 - **Mais ou menos espectadores:** mude `MAX_VIEWERS`. Faça a conta com o seu upload (tabela em [Requisitos](#requisitos)).
 - **Espectadores transmitindo:** quem assiste pelo computador vê o botão **Transmitir minha tela** enquanto houver vaga (`MAX_SCREENS`). Cada tela é enviada pelo servidor a quem estiver vendo, então mais telas pesam no upload. Para poupar internet, quem assiste só recebe o vídeo das telas que aparecem na página: com uma tela em destaque, as outras não chegam; na grade, cada uma vem numa versão menor. Para desligar, use `MAX_SCREENS=1`.
+- **Endereço fixo para assistir:** defina `STATIC_WATCH_SLUG=sala1` para usar sempre `https://seu-dominio/assistir/sala1`. A sala de vídeo interna continua usando um código aleatório; isso mantém os pedidos de compartilhar tela ligados à sala correta. Apague o valor para voltar aos links aleatórios.
 - **Encerrar:** clique em Parar no site. Se a aba for fechada, a sala some sozinha em cerca de um minuto.
 - **Parar o servidor:** `docker compose down`. Para ligar de novo: `docker compose up -d` (no cenário B, liste os serviços como no passo B4).
 

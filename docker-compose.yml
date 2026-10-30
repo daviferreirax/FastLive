@@ -50,6 +50,7 @@ services:
       HOST_PASSWORD: ${HOST_PASSWORD:?defina HOST_PASSWORD no .env}
       MAX_VIEWERS: ${MAX_VIEWERS:-5}
       MAX_SCREENS: ${MAX_SCREENS:-3}
+      STATIC_WATCH_SLUG: ${STATIC_WATCH_SLUG:-}
       CF_TURN_KEY_ID: ${CF_TURN_KEY_ID:-}
       CF_TURN_API_TOKEN: ${CF_TURN_API_TOKEN:-}
     depends_on:
