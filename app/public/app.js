@@ -72,16 +72,35 @@ const SCREEN_PUBLISH = {
 const MIC_CAPTURE = { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 2 };
 const MIC_PUBLISH = { audioPreset: AudioPresets.musicHighQualityStereo, dtx: false, red: true, forceStereo: true };
 
+// O SDK LiveKit usado aqui ainda não repassa windowAudio para getDisplayMedia.
+// Injeta a opção só durante a chamada de captura; Chrome recente pode então
+// oferecer o áudio do aplicativo selecionado, em vez da mixagem inteira do sistema.
+async function createScreenTracksWithWindowAudio(participant, options) {
+  const mediaDevices = navigator.mediaDevices;
+  const original = mediaDevices.getDisplayMedia;
+  const wrapped = function (constraints) {
+    if (mediaDevices.getDisplayMedia === wrapped) mediaDevices.getDisplayMedia = original;
+    return original.call(mediaDevices, { ...constraints, windowAudio: options.audio ? 'window' : 'exclude' });
+  };
+  mediaDevices.getDisplayMedia = wrapped;
+  try {
+    return await participant.createScreenTracks(options);
+  } finally {
+    if (mediaDevices.getDisplayMedia === wrapped) mediaDevices.getDisplayMedia = original;
+  }
+}
+
 // Captura a tela e publica na sala. beforePublish roda entre a escolha da tela e a publicação
 // (quem assiste pede permissão ao servidor nessa hora). Devolve a faixa de vídeo.
 async function publishScreen(room, { quality = '720', audio = true, beforePublish } = {}) {
   const q = QUALITIES[quality] || QUALITIES['720'];
   const lp = room.localParticipant;
-  const tracks = await lp.createScreenTracks({
+  const captureOptions = {
     ...SCREEN_CAPTURE,
     resolution: q.resolution,
     audio: audio && { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
-  });
+  };
+  const tracks = await createScreenTracksWithWindowAudio(lp, captureOptions);
   try {
     if (beforePublish) await beforePublish();
     for (const track of tracks) {
