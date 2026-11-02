@@ -7,6 +7,8 @@
 - Endereço: `https://exemplo.duckdns.org`
 - Sala fixa: `/assistir/sala1`
 - Ponto de retorno criado antes do ambiente de teste: `production-stable-2026-10-30`
+- Último commit implantado: `50e2ca8` (`Capture audio from selected window`)
+- Tag de retorno imediatamente anterior ao áudio por janela: `production-before-window-audio-2026-11-02`
 
 ## Teste
 
@@ -16,6 +18,7 @@
 - Endereço: `https://teste.exemplo.duckdns.org`
 - Sala fixa: `/assistir/sala1`
 - Porta interna do app: `3078` (não abrir no firewall; o Caddy atende HTTPS na 443).
+- Último commit testado: `5317534` (`Capture audio from selected window`)
 
 O app de teste usa um `.env.staging` separado e o mesmo LiveKit da produção. Os
 códigos das salas continuam aleatórios e cada app mantém seu próprio estado de
@@ -30,3 +33,22 @@ VPS; alterações no próprio LiveKit exigem planejamento separado.
 3. Só promover para `/home/ubuntu/peekme` e reconstruir produção quando o usuário
    pedir explicitamente.
 4. Manter o tag `production-stable-2026-10-30` como ponto de retorno inicial.
+
+## Containers e compartilhamento
+
+- Produção: `peekme-app-1`; teste: `peekme-app-staging`.
+- `peekme-livekit-1` e `peekme-caddy-1` são compartilhados. O app de teste tem estado de sala separado, mas as transmissões de ambos usam o mesmo LiveKit e a rede/upload/CPU da VPS.
+- Para uma alteração comum de aplicação, reconstrua somente o app do ambiente autorizado. Não derrube o stack inteiro.
+
+## Git e colaboração
+
+- O checkout de produção e o checkout de teste são worktrees da mesma cópia local do Git, vinculados às branches `production` e `staging`.
+- `origin` aponta para o repositório do criador do PeekMe. Não faça push para `origin`; os commits deste servidor são locais. Para compartilhar com outro computador, configure um remoto próprio e só publique quando o usuário autorizar.
+- As regras comuns para IAs estão em `AGENTS.md`; o procedimento está em `docs/AI-WORKFLOW.md`; o estado mais recente está em `docs/AI-HANDOFF.md`.
+
+## Tags Git presentes
+
+- `v1.0.0` e `v1.1.0`: versões upstream.
+- `production-stable-2026-10-30`, `production-before-unified-entry-2026-10-30` e `production-before-window-audio-2026-11-02`: pontos de retorno da produção.
+
+Uma tag Git preserva um ponto no histórico do código, mas não salva `.env`, nem garante que uma imagem Docker antiga esteja disponível. Para voltar uma versão implantada, restaure o código aprovado e reconstrua o app; não remova tags.
