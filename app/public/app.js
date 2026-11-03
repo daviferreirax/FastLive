@@ -608,7 +608,7 @@ $('join-form').addEventListener('submit', e => {
 
 async function enterUnifiedLink() {
   try {
-    $('name').value = localStorage.getItem('fastlive-name') || localStorage.getItem('peekme-name') || '';
+    $('name').value = localStorage.getItem('fastlive-name') || '';
   } catch {}
   $('join-title').textContent = 'Conectando ao FastLive';
   $('join-description').textContent = 'Verificando se você será o anfitrião ou um convidado…';

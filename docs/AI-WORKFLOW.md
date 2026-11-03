@@ -15,7 +15,7 @@ Este documento é a referência operacional compartilhada por Codex, Antigravity
 - Faça alterações pequenas, revise o diff, rode verificações adequadas e crie um commit local com mensagem descritiva.
 - Atualize `docs/AI-HANDOFF.md` ao terminar: registre o que foi feito, branch/commit, testes, limitações e próximo passo. Não coloque segredos ou dados pessoais nesse arquivo.
 - Antes de outra IA continuar, ela deve conferir o último commit e o estado da árvore. Se o mesmo checkout estiver sendo usado, não trabalhem nele ao mesmo tempo. Para trabalho paralelo, use branches e worktrees separados e integre os commits deliberadamente.
-- Os checkouts locais estão vinculados ao mesmo repositório Git. O remoto `origin` aponta para o repositório privado do usuário (`git@github.com:daviferreirax/FastLive.git`), enquanto `upstream` aponta para `https://github.com/williampeixinho/PeekMe.git` (do criador original do projeto). Nunca envie alterações para `upstream`. Publique em `origin` quando o usuário pedir.
+- Os checkouts locais estão vinculados ao mesmo repositório Git. O remoto `origin` aponta para o repositório privado do usuário (`git@github.com:daviferreirax/FastLive.git`), enquanto `upstream` aponta para o repositório original de onde o FastLive se originou (`https://github.com/williampeixinho/PeekMe.git`). Nunca envie alterações para `upstream`. Publique em `origin` quando o usuário pedir.
 
 ## Promoção para produção
 
@@ -37,14 +37,14 @@ Não faça deploy de produção por inferência, por conveniência ou porque um 
 
 ## Deploys neste servidor
 
-- Teste: em `/home/ubuntu/peekme-staging`, valide Compose e reconstrua só o serviço de teste:
+- Teste: em `/home/ubuntu/fastlive-staging`, valide Compose e reconstrua só o serviço de teste:
 
   ```sh
-  docker compose -p peekme-staging --env-file .env.staging -f docker-compose.staging.yml config -q
-  sudo docker compose -p peekme-staging --env-file .env.staging -f docker-compose.staging.yml up -d --build
+  docker compose -p fastlive-staging --env-file .env.staging -f docker-compose.staging.yml config -q
+  sudo docker compose -p fastlive-staging --env-file .env.staging -f docker-compose.staging.yml up -d --build
   ```
 
-- Produção: somente após autorização explícita, em `/home/ubuntu/peekme`:
+- Produção: somente após autorização explícita, em `/home/ubuntu/fastlive`:
 
   ```sh
   docker compose --env-file .env config -q

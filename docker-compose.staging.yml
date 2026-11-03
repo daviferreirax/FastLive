@@ -3,8 +3,8 @@
 services:
   app:
     build: ./app
-    image: peekme-app-staging
-    container_name: peekme-app-staging
+    image: fastlive-app-staging
+    container_name: fastlive-app-staging
     restart: unless-stopped
     network_mode: host
     env_file:

@@ -1,6 +1,6 @@
 # Changelog
 
-Todas as mudanças relevantes do PeekMe ficam registradas aqui.
+Todas as mudanças relevantes do FastLive ficam registradas aqui.
 O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o projeto usa [versionamento semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
@@ -34,6 +34,6 @@ Primeira versão pública.
 - Instalação guiada por IA (Claude Code ou Codex) com um prompt pronto, além do passo a passo manual.
 - `/healthz` informa a versão em execução.
 
-[Não lançado]: https://github.com/williampeixinho/PeekMe/compare/v1.1.0...HEAD
-[1.1.0]: https://github.com/williampeixinho/PeekMe/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/williampeixinho/PeekMe/releases/tag/v1.0.0
+[Não lançado]: https://github.com/daviferreirax/FastLive/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/daviferreirax/FastLive/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/daviferreirax/FastLive/releases/tag/v1.0.0

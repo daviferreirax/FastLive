@@ -1,4 +1,4 @@
-# PeekMe: tudo roda em Docker. Para subir: docker compose up -d
+# FastLive: tudo roda em Docker. Para subir: docker compose up -d
 # Todos os serviços usam a rede do host (recomendado pelo LiveKit para vídeo).
 services:
   caddy:
@@ -39,7 +39,7 @@ services:
 
   app:
     build: ./app
-    image: peekme-app
+    image: fastlive-app
     restart: unless-stopped
     network_mode: host
     environment:
