@@ -2,9 +2,9 @@
 
 Compartilhamento de tela simples e auto-hospedado, no estilo do "Go Live" do Discord, mas sem chat, sem servidores e sem contas. Uma pessoa transmite a tela (com áudio), manda um link, e os amigos assistem pelo navegador.
 
-> **FastLive** é um fork customizado do projeto [PeekMe](https://github.com/williampeixinho/PeekMe), adaptado com entrada unificada por link fixo (`/assistir/sala1`) sem senha, definição automática de anfitrião para o primeiro visitante, qualidade padrão em 1080p 60fps, áudio inicialmente desmarcado e suporte a captura de áudio por janela do aplicativo (`windowAudio`).
+> **FastLive** é um fork customizado do projeto [PeekMe](https://github.com/williampeixinho/PeekMe), adaptado com entrada unificada pela raiz do domínio, sem senha, definição automática de anfitrião para o primeiro visitante, qualidade padrão em 1080p 60fps, áudio inicialmente desmarcado e suporte a captura de áudio por janela do aplicativo (`windowAudio`).
 
-- **Um link para todos:** abra `https://seu-dominio/assistir/sala1`. Se a sala estiver livre, você será anfitrião; se alguém já estiver nela, entrará como convidado.
+- **Um link para todos:** abra `https://seu-dominio`. Se a sala estiver livre, você será anfitrião; se alguém já estiver nela, entrará como convidado.
 - **Transmitir:** o anfitrião escolhe a tela, janela ou aba e inicia. Não há senha de transmissão.
 - **Assistir:** convidados podem informar um nome opcional e entrar pelo mesmo link. Funciona no celular também.
 - **Qualidade:** 720p ou 1080p a 60 fps, escolhida na hora de transmitir. Quem tem internet fraca recebe automaticamente uma versão menor.
@@ -330,7 +330,7 @@ Dicas:
 
 - **Mais ou menos espectadores:** mude `MAX_VIEWERS`. Faça a conta com o seu upload (tabela em [Requisitos](#requisitos)).
 - **Espectadores transmitindo:** quem assiste pelo computador vê o botão **Transmitir minha tela** enquanto houver vaga (`MAX_SCREENS`). Cada tela é enviada pelo servidor a quem estiver vendo, então mais telas pesam no upload. Para poupar internet, quem assiste só recebe o vídeo das telas que aparecem na página: com uma tela em destaque, as outras não chegam; na grade, cada uma vem numa versão menor. Para desligar, use `MAX_SCREENS=1`.
-- **Endereço fixo:** defina `STATIC_WATCH_SLUG=sala1` para usar o mesmo link como anfitrião ou convidado: `https://seu-dominio/assistir/sala1`.
+- **Endereço:** anfitrião e convidados usam o mesmo endereço, a raiz do domínio (`https://seu-dominio`). `STATIC_WATCH_SLUG` é opcional e só mantém um apelido fixo para links antigos no formato `/assistir/<apelido>`.
 - **Encerrar:** clique em Parar no site. Se a aba for fechada, a sala some sozinha em cerca de um minuto.
 - **Parar o servidor:** `docker compose down`. Para ligar de novo: `docker compose up -d` (no cenário B, liste os serviços como no passo B4).
 

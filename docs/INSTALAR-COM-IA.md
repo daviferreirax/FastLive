@@ -223,7 +223,7 @@ Descubra o IP local do servidor com `hostname -I | awk '{print $1}'`.
 ## Fase 9: Teste real e entrega
 
 Peça para a pessoa:
-1. Abrir `https://<DOMAIN>/assistir/sala1` **no computador**. A primeira pessoa escolhe a qualidade e inicia a transmissão; as próximas entram como convidadas pelo mesmo endereço.
+1. Abrir `https://<DOMAIN>` **no computador**. A primeira pessoa escolhe a qualidade e inicia a transmissão; as próximas entram como convidadas pelo mesmo endereço.
 2. Copiar o link de assistir e abrir **no celular usando 4G/5G, com o Wi-Fi desligado** (testa o acesso de fora).
 3. Dizer se o vídeo apareceu e se tem som.
 

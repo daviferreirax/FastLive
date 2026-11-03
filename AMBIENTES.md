@@ -5,7 +5,7 @@
 - Pasta: `/home/ubuntu/fastlive`
 - Branch local: `production`
 - Endereço: `https://exemplo.duckdns.org`
-- Sala fixa: `/assistir/sala1`
+- Acesso: pela raiz do domínio (uma única sala; não é preciso caminho adicional)
 - Ponto de retorno criado antes do ambiente de teste: `production-stable-2026-10-30`
 - Tag de retorno antes do rebrand FastLive: `production-before-fastlive-rebrand-2026-11-03`
 - Tag de retorno antes da migração das pastas/containers da VPS: `production-before-vps-rename-2026-11-03`
@@ -16,7 +16,7 @@
 - Branch local: `staging`
 - Arquivo Compose: `docker-compose.staging.yml`
 - Endereço: `https://teste.exemplo.duckdns.org`
-- Sala fixa: `/assistir/sala1`
+- Acesso: pela raiz do domínio (uma única sala; não é preciso caminho adicional)
 - Porta interna do app: `3078` (não abrir no firewall; o Caddy atende HTTPS na 443).
 
 O app de teste usa um `.env.staging` separado e o mesmo LiveKit da produção. Os
