@@ -23,11 +23,12 @@
 - `production-before-window-audio-2026-11-02`: produção antes da alteração de captura de áudio por janela.
 - `production-before-fastlive-rebrand-2026-11-03`: produção antes do rebrand visual para FastLive.
 - `production-before-vps-rename-2026-11-03`: produção antes da migração das pastas e containers da VPS para `fastlive`.
+- `production-before-root-link-2026-11-03`: produção antes de o link compartilhado passar a ser a raiz do domínio.
 - `v1.0.0` e `v1.1.0`: tags do projeto upstream.
 
-## Pendente de promoção
+## Última promoção
 
-- Em `staging`: o "Link para assistir" copiado pelo anfitrião passou a ser a raiz do domínio (`location.origin`) em vez de `/assistir/<apelido>`. Links antigos continuam abrindo o app. Aguarda validação do usuário em `https://teste.exemplo.duckdns.org` e pedido explícito para promover.
+- O "Link para assistir" copiado pelo anfitrião passou a ser a raiz do domínio (`location.origin`) em vez de `/assistir/<apelido>`. Validado pelo usuário no teste e promovido para produção em 2026-11-03 (commit `2260602` em `staging`, `5d0aeb9` em `production`). Links antigos `/assistir/...` continuam abrindo o app. Não havia salas ativas no momento do deploy.
 
 ## Próximo passo
 
