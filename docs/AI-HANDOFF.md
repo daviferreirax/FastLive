@@ -6,7 +6,7 @@
 
 - Produção: `/home/ubuntu/fastlive`, branch `production`. Containers migrados para `fastlive-app-1`, `fastlive-livekit-1`, `fastlive-caddy-1` e `fastlive-duckdns-1` (com volumes HTTPS `fastlive_caddy_data` e `fastlive_caddy_config` preservados).
 - Teste: `/home/ubuntu/fastlive-staging`, branch `staging`. Container migrado para `fastlive-app-staging` (projeto `fastlive-staging`).
-- Produção mantém o link `https://exemplo.duckdns.org/assistir/sala1`; teste usa `https://teste.exemplo.duckdns.org/assistir/sala1`.
+- Produção é acessada em `https://exemplo.duckdns.org`; teste em `https://teste.exemplo.duckdns.org` (raiz do domínio, sala única).
 - Toda a identidade do projeto e da infraestrutura da VPS foi migrada para **FastLive**.
 
 ## Comportamento implementado
@@ -24,6 +24,10 @@
 - `production-before-fastlive-rebrand-2026-11-03`: produção antes do rebrand visual para FastLive.
 - `production-before-vps-rename-2026-11-03`: produção antes da migração das pastas e containers da VPS para `fastlive`.
 - `v1.0.0` e `v1.1.0`: tags do projeto upstream.
+
+## Pendente de promoção
+
+- Em `staging`: o "Link para assistir" copiado pelo anfitrião passou a ser a raiz do domínio (`location.origin`) em vez de `/assistir/<apelido>`. Links antigos continuam abrindo o app. Aguarda validação do usuário em `https://teste.exemplo.duckdns.org` e pedido explícito para promover.
 
 ## Próximo passo
 
