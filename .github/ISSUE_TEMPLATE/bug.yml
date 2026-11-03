@@ -27,7 +27,7 @@ body:
   - type: input
     id: versao
     attributes:
-      label: Versão do PeekMe
+      label: Versão do FastLive
       description: "Veja com: curl -s http://localhost:3077/healthz"
       placeholder: "1.0.0"
   - type: dropdown

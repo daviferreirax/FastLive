@@ -19,7 +19,7 @@
 	@livekit path /rtc /rtc/*
 	reverse_proxy @livekit 127.0.0.1:7880
 
-	# Site do PeekMe
+	# Site do FastLive
 	reverse_proxy 127.0.0.1:{$APP_PORT:3077}
 }
 

@@ -19,9 +19,9 @@ Compartilhamento de tela simples e auto-hospedado, no estilo do "Go Live" do Dis
 
 ## Requisitos
 
-O PeekMe tem dois lados: o **servidor**, que fica ligado e repassa o vídeo, e os **navegadores** de quem transmite e de quem assiste.
+O FastLive tem dois lados: o **servidor**, que fica ligado e repassa o vídeo, e os **navegadores** de quem transmite e de quem assiste.
 
-### Servidor (onde o PeekMe é instalado)
+### Servidor (onde o FastLive é instalado)
 
 | Item | Mínimo |
 |---|---|
@@ -48,7 +48,7 @@ O PeekMe tem dois lados: o **servidor**, que fica ligado e repassa o vídeo, e o
 
 Se você só tem um PC com Windows, as opções são:
 - **Usar outra máquina como servidor:** uma Raspberry Pi, um PC velho com Linux ou um VPS (há opções grátis, como o Oracle Cloud Free Tier). Você continua transmitindo do Windows normalmente.
-- **WSL2 com rede espelhada (experimental, não testado):** no Windows 11 22H2 ou mais novo, o WSL2 com `networkingMode=mirrored` compartilha a rede do Windows. Instalar o Docker *dentro* do Ubuntu no WSL2 (não o Docker Desktop) e seguir a instalação como se fosse Linux pode funcionar, mas o PC precisa ficar ligado durante as transmissões. Se testar, conte como foi nas [Discussões](https://github.com/williampeixinho/PeekMe/discussions).
+- **WSL2 com rede espelhada (experimental, não testado):** no Windows 11 22H2 ou mais novo, o WSL2 com `networkingMode=mirrored` compartilha a rede do Windows. Instalar o Docker *dentro* do Ubuntu no WSL2 (não o Docker Desktop) e seguir a instalação como se fosse Linux pode funcionar, mas o PC precisa ficar ligado durante as transmissões. Se testar, conte como foi nas [Discussões](https://github.com/daviferreirax/FastLive/discussions).
 
 ---
 
@@ -69,8 +69,8 @@ npm install -g @openai/codex && codex
 **Prompt** (copie e cole):
 
 ```text
-Instale o PeekMe neste servidor. Clone https://github.com/williampeixinho/PeekMe.git
-em ~/peekme (se já existir, rode git pull) e siga à risca o roteiro em
+Instale o FastLive neste servidor. Clone https://github.com/daviferreirax/FastLive.git
+em ~/fastlive (se já existir, rode git pull) e siga à risca o roteiro em
 docs/INSTALAR-COM-IA.md. Fale comigo em português.
 ```
 
@@ -120,7 +120,7 @@ Prefere fazer à mão? Siga a [instalação manual](#instalação-manual-passo-a
 |---|---|
 | `caddy` | HTTPS automático (Let's Encrypt) na porta 443 |
 | `livekit` | Servidor de vídeo ([LiveKit](https://livekit.io), um SFU): recebe a sua tela uma vez e repassa para cada espectador |
-| `app` | O site do PeekMe (Node.js) e a geração dos acessos (tokens) |
+| `app` | O site do FastLive (Node.js) e a geração dos acessos (tokens) |
 | `duckdns` | Opcional: mantém um domínio grátis apontando para o IP da sua casa |
 | `cloudflared` | Opcional: Cloudflare Tunnel, para publicar o site sem abrir portas |
 
@@ -158,11 +158,11 @@ sudo usermod -aG docker $USER
 docker compose version   # deve mostrar a versão do Compose v2
 ```
 
-**2. Baixe o PeekMe:**
+**2. Baixe o FastLive:**
 
 ```sh
-git clone https://github.com/williampeixinho/PeekMe.git peekme
-cd peekme
+git clone https://github.com/daviferreirax/FastLive.git fastlive
+cd fastlive
 ```
 
 **3. Dê um IP fixo ao servidor na sua rede.** No roteador, procure "Reserva de DHCP" / "IP estático" e reserve o IP atual da máquina (veja com `hostname -I`). Nos exemplos abaixo, o IP do servidor na rede local aparece como `IP-DO-SERVIDOR` (algo como `192.168.0.50`).
@@ -176,7 +176,7 @@ Agora siga o seu cenário.
 **A1. Crie um domínio grátis no DuckDNS** (pule se já tiver um domínio apontando para a sua casa)
 
 1. Entre em https://www.duckdns.org com sua conta Google ou GitHub.
-2. Crie um subdomínio, por exemplo `meu-peekme` (vira `meu-peekme.duckdns.org`).
+2. Crie um subdomínio, por exemplo `meu-fastlive` (vira `meu-exemplo.duckdns.org`).
 3. Copie o **token** que aparece no topo da página. Ele é secreto.
 
 **A2. Abra (redirecione) as portas no roteador**
@@ -222,20 +222,20 @@ Você precisa de uma conta grátis no [Cloudflare](https://dash.cloudflare.com) 
 
 **B1. Crie o túnel**
 
-1. No painel do Cloudflare: **Zero Trust → Networks → Tunnels → Create a tunnel** → tipo **Cloudflared**. Dê um nome (ex.: `peekme`).
+1. No painel do Cloudflare: **Zero Trust → Networks → Tunnels → Create a tunnel** → tipo **Cloudflared**. Dê um nome (ex.: `fastlive`).
 2. Na tela de instalação, escolha **Docker** e copie só o **token** (o texto longo depois de `--token`).
 3. Em **Public Hostname**, adicione:
-   - Subdomain: `peekme` (ou o que quiser), Domain: o seu domínio
+   - Subdomain: `fastlive` (ou o que quiser), Domain: o seu domínio
    - Service: **HTTP**, URL: `localhost:3077`
 4. Salve.
 
-O site do PeekMe repassa a sinalização do vídeo (`/rtc`) para o LiveKit, então tudo passa por esse único endereço. O Caddy não é usado neste cenário.
+O site do FastLive repassa a sinalização do vídeo (`/rtc`) para o LiveKit, então tudo passa por esse único endereço. O Caddy não é usado neste cenário.
 
 > Já usa o `cloudflared` instalado direto no sistema? Também serve: aponte o hostname para `http://localhost:3077` (ou `http://IP-DO-SERVIDOR:3077` se o túnel roda em outra máquina) e não preencha `CLOUDFLARE_TUNNEL_TOKEN`.
 
 **B2. Crie a chave TURN**
 
-1. No painel do Cloudflare: **Realtime → TURN Server → Create** (ou "Create TURN key"). Dê um nome (ex.: `PeekMe`).
+1. No painel do Cloudflare: **Realtime → TURN Server → Create** (ou "Create TURN key"). Dê um nome (ex.: `FastLive`).
 2. Copie o **Turn Token ID** e o **API Token**. O API Token só aparece uma vez. Guarde num lugar seguro e nunca cole em lugares públicos.
 
 **B3. Configure**
@@ -248,7 +248,7 @@ nano .env
 Preencha:
 
 ```ini
-DOMAIN=peekme.seu-dominio.com
+DOMAIN=fastlive.seu-dominio.com
 LIVEKIT_API_SECRET=   # cole o resultado de: openssl rand -hex 32
 COMPOSE_PROFILES=tunnel
 CLOUDFLARE_TUNNEL_TOKEN=<token do passo B1>
@@ -264,7 +264,7 @@ Proteja o arquivo: `chmod 600 .env`.
 docker compose up -d --build app livekit cloudflared
 ```
 
-Abra `https://peekme.seu-dominio.com`. Quem está na sua rede ou tem IPv6 conecta direto; os demais passam pelo TURN automaticamente.
+Abra `https://fastlive.seu-dominio.com`. Quem está na sua rede ou tem IPv6 conecta direto; os demais passam pelo TURN automaticamente.
 
 ---
 
@@ -287,7 +287,7 @@ O arquivo `.env` fica na pasta do projeto e **nunca** deve ir para o git (já es
 | Variável | Obrigatória | Para que serve |
 |---|---|---|
 | `DOMAIN` | sim | Domínio do site, sem `https://` |
-| `LIVEKIT_API_KEY` | sim | Nome da chave do LiveKit (pode ficar `peekme`) |
+| `LIVEKIT_API_KEY` | sim | Nome da chave do LiveKit (pode ficar `fastlive`) |
 | `LIVEKIT_API_SECRET` | sim | Segredo do LiveKit, 32+ caracteres. Gere com `openssl rand -hex 32` |
 | `MAX_VIEWERS` | não | Máximo de espectadores (padrão 5) |
 | `MAX_SCREENS` | não | Máximo de telas no ar ao mesmo tempo, contando a de quem chegou primeiro (padrão 3). `1` = somente o anfitrião transmite |
@@ -314,15 +314,15 @@ Para **assistir**, qualquer navegador moderno serve, inclusive no celular. Para 
 | Windows | Chrome, Edge, Brave, Opera | Tela inteira com **som do sistema todo** (marque "Compartilhar áudio do sistema") ou uma aba com o som da aba |
 | macOS | Chrome, Edge | Só o som de **abas** (marque "Compartilhar áudio da guia"). Tela inteira e janelas vão sem som |
 | Linux | Chrome, Chromium, Edge | Som de abas. Para o som do sistema, use o truque do Firefox abaixo |
-| Linux | Firefox | O Firefox não envia o som junto com a tela. O PeekMe pede então uma **entrada de áudio**: escolha **"Monitor of …"** (o monitor da sua saída de som) e o som do computador vai junto |
+| Linux | Firefox | O Firefox não envia o som junto com a tela. O FastLive pede então uma **entrada de áudio**: escolha **"Monitor of …"** (o monitor da sua saída de som) e o som do computador vai junto |
 | Windows | Firefox | Mesmo esquema: escolha "Mixagem estéreo" / "Stereo Mix" (ative em Configurações de som → Mais configurações de som → Gravação) ou um cabo virtual como o VB-Cable |
 | Qualquer | Safari | Transmite sem áudio |
 
 Dicas:
 - Compartilhar uma **janela** (em vez da tela inteira ou de uma aba) normalmente vai **sem som** no Chrome/Edge.
 - Se o navegador de quem assiste bloquear o som automático, aparece um botão para ativar o áudio.
-- Se a transmissão estiver sem som, o PeekMe avisa tanto quem transmite quanto quem assiste.
-- A entrada de áudio é usada só no Firefox. Nos outros navegadores, se a tela vier sem som, o PeekMe apenas avisa, para nunca transmitir o seu microfone por engano.
+- Se a transmissão estiver sem som, o FastLive avisa tanto quem transmite quanto quem assiste.
+- A entrada de áudio é usada só no Firefox. Nos outros navegadores, se a tela vier sem som, o FastLive apenas avisa, para nunca transmitir o seu microfone por engano.
 
 ---
 
@@ -338,12 +338,12 @@ Dicas:
 
 ## Atualizar
 
-O PeekMe usa [versionamento semântico](https://semver.org/lang/pt-BR/) (`MAIOR.MENOR.CORREÇÃO`). As novidades de cada versão ficam no [CHANGELOG](CHANGELOG.md) e nas [Releases](https://github.com/williampeixinho/PeekMe/releases). Uma versão MAIOR nova pode exigir mudanças no `.env`: leia o CHANGELOG antes.
+O FastLive usa [versionamento semântico](https://semver.org/lang/pt-BR/) (`MAIOR.MENOR.CORREÇÃO`). As novidades de cada versão ficam no [CHANGELOG](CHANGELOG.md) e nas [Releases](https://github.com/daviferreirax/FastLive/releases). Uma versão MAIOR nova pode exigir mudanças no `.env`: leia o CHANGELOG antes.
 
 Para atualizar para a versão mais recente:
 
 ```sh
-cd peekme
+cd fastlive
 git pull
 docker compose pull
 docker compose up -d --build            # cenário A/C
@@ -376,7 +376,7 @@ Alguns roteadores não deixam acessar o próprio IP público de dentro da rede (
 **Erro "Não consegui descobrir o IP público" nos registros do LiveKit**
 O servidor não conseguiu acessar `api.ipify.org`. Defina `NODE_IP` no `.env` com o seu IP público.
 
-**"Para compartilhar a tela, abra o PeekMe pelo endereço com https://"**
+**"Para compartilhar a tela, abra o FastLive pelo endereço com https://"**
 Compartilhar tela exige HTTPS. Abra sempre por `https://seu-dominio`, nunca pelo IP.
 
 **Imagem travando para todo mundo**
@@ -386,7 +386,7 @@ O seu upload está no limite. Use 720p, reduza `MAX_VIEWERS` ou pause outros env
 No Cloudflare, em **Caching → Configuration → Browser Cache TTL**, escolha **Respect Existing Headers**.
 
 **Porta já em uso**
-O PeekMe usa a rede do host. Se a 3077 ou a 8780 já estiverem ocupadas, mude `APP_PORT` ou `CADDY_HTTP_PORT`. As portas 443, 7880, 7881 e 7882 precisam estar livres.
+O FastLive usa a rede do host. Se a 3077 ou a 8780 já estiverem ocupadas, mude `APP_PORT` ou `CADDY_HTTP_PORT`. As portas 443, 7880, 7881 e 7882 precisam estar livres.
 
 ---
 
@@ -417,12 +417,12 @@ Abra http://localhost:3077 (o navegador permite compartilhar tela em `localhost`
 
 ## Comentários, sugestões e contribuições
 
-- 💬 **Dúvidas, comentários e ideias:** [Discussões](https://github.com/williampeixinho/PeekMe/discussions)
-- 🐞 **Algo não funciona:** [abra uma issue de Problema](https://github.com/williampeixinho/PeekMe/issues/new/choose)
-- 💡 **Sugestão de recurso:** [abra uma issue de Sugestão](https://github.com/williampeixinho/PeekMe/issues/new/choose)
+- 💬 **Dúvidas, comentários e ideias:** [Discussões](https://github.com/daviferreirax/FastLive/discussions)
+- 🐞 **Algo não funciona:** [abra uma issue de Problema](https://github.com/daviferreirax/FastLive/issues/new/choose)
+- 💡 **Sugestão de recurso:** [abra uma issue de Sugestão](https://github.com/daviferreirax/FastLive/issues/new/choose)
 - 🛠️ **Quer mandar código?** Leia o [guia de contribuição](CONTRIBUTING.md).
 
-Se o PeekMe te ajudou, deixe uma ⭐ no repositório!
+Se o FastLive te ajudou, deixe uma ⭐ no repositório!
 
 ## Licença
 

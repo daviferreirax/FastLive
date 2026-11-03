@@ -1,4 +1,4 @@
-# Contribuindo com o PeekMe
+# Contribuindo com o FastLive
 
 Que bom que você quer ajudar! Toda contribuição é bem-vinda: relato de problema, ideia, correção no README ou código.
 
@@ -6,10 +6,10 @@ Que bom que você quer ajudar! Toda contribuição é bem-vinda: relato de probl
 
 | Quero... | Use |
 |---|---|
-| Tirar uma dúvida, comentar ou mostrar o meu PeekMe | [Discussões](https://github.com/williampeixinho/PeekMe/discussions) |
-| Relatar algo que não funciona | [Nova issue → Problema](https://github.com/williampeixinho/PeekMe/issues/new/choose) |
-| Sugerir um recurso | [Nova issue → Sugestão](https://github.com/williampeixinho/PeekMe/issues/new/choose) |
-| Relatar uma falha de segurança | Em privado, por [Security → Report a vulnerability](https://github.com/williampeixinho/PeekMe/security/advisories/new). Não abra issue pública |
+| Tirar uma dúvida, comentar ou mostrar o meu FastLive | [Discussões](https://github.com/daviferreirax/FastLive/discussions) |
+| Relatar algo que não funciona | [Nova issue → Problema](https://github.com/daviferreirax/FastLive/issues/new/choose) |
+| Sugerir um recurso | [Nova issue → Sugestão](https://github.com/daviferreirax/FastLive/issues/new/choose) |
+| Relatar uma falha de segurança | Em privado, por [Security → Report a vulnerability](https://github.com/daviferreirax/FastLive/security/advisories/new). Não abra issue pública |
 
 **Nunca publique o seu `.env`, senhas, tokens, chaves ou IP público** em issues, discussões ou prints.
 

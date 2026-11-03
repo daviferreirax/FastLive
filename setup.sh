@@ -1,5 +1,5 @@
 #!/bin/sh
-# Cria o arquivo .env do PeekMe com perguntas simples.
+# Cria o arquivo .env do FastLive com perguntas simples.
 set -e
 cd "$(dirname "$0")"
 
@@ -9,7 +9,7 @@ if [ -f .env ]; then
   [ "$answer" = "s" ] || [ "$answer" = "S" ] || exit 0
 fi
 
-printf 'Seu subdomínio no DuckDNS (só o nome, ex.: meu-peekme) ou o domínio completo se usar outro DDNS: '
+printf 'Seu subdomínio no DuckDNS (só o nome, ex.: meu-fastlive) ou o domínio completo se usar outro DDNS: '
 read -r name
 case "$name" in
   *.*) domain="$name"; duck_sub="" ;;
@@ -26,7 +26,7 @@ secret=$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')
 
 {
   echo "DOMAIN=$domain"
-  echo "LIVEKIT_API_KEY=peekme"
+  echo "LIVEKIT_API_KEY=fastlive"
   echo "LIVEKIT_API_SECRET=$secret"
   echo "MAX_VIEWERS=5"
   echo "APP_PORT=3077"
