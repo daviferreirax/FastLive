@@ -384,7 +384,8 @@ async function startStream() {
   // Avisa quando o navegador não entregou o áudio (janela ou caixa desmarcada).
   $('host-audio').hidden = !$('audio').checked || hasAudio(room.localParticipant);
 
-  $('share-link').value = `${location.origin}/assistir/${session.watchCode || session.room}`;
+  // Sala única: anfitrião e convidados usam a raiz do domínio.
+  $('share-link').value = location.origin;
   $('viewer-max').textContent = session.maxViewers;
   room
     .on(RoomEvent.Reconnecting, () => { $('host-status').textContent = 'Conexão instável, reconectando…'; })
