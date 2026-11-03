@@ -15,7 +15,7 @@ Este documento é a referência operacional compartilhada por Codex, Antigravity
 - Faça alterações pequenas, revise o diff, rode verificações adequadas e crie um commit local com mensagem descritiva.
 - Atualize `docs/AI-HANDOFF.md` ao terminar: registre o que foi feito, branch/commit, testes, limitações e próximo passo. Não coloque segredos ou dados pessoais nesse arquivo.
 - Antes de outra IA continuar, ela deve conferir o último commit e o estado da árvore. Se o mesmo checkout estiver sendo usado, não trabalhem nele ao mesmo tempo. Para trabalho paralelo, use branches e worktrees separados e integre os commits deliberadamente.
-- Os checkouts locais estão vinculados ao mesmo repositório Git, mas commits locais não aparecem automaticamente em outro computador. O remoto `origin` é `https://github.com/williampeixinho/PeekMe.git`, do criador do projeto. Não envie alterações para esse remoto. Para sincronizar com uma máquina diferente, o usuário precisa configurar um remoto próprio (por exemplo, um fork ou repositório privado) e autorizar o envio.
+- Os checkouts locais estão vinculados ao mesmo repositório Git. O remoto `origin` aponta para o repositório privado do usuário (`git@github.com:daviferreirax/FastLive.git`), enquanto `upstream` aponta para `https://github.com/williampeixinho/PeekMe.git` (do criador original do projeto). Nunca envie alterações para `upstream`. Publique em `origin` quando o usuário pedir.
 
 ## Promoção para produção
 

@@ -43,7 +43,7 @@ VPS; alterações no próprio LiveKit exigem planejamento separado.
 ## Git e colaboração
 
 - O checkout de produção e o checkout de teste são worktrees da mesma cópia local do Git, vinculados às branches `production` e `staging`.
-- `origin` aponta para o repositório do criador do PeekMe. Não faça push para `origin`; os commits deste servidor são locais. Para compartilhar com outro computador, configure um remoto próprio e só publique quando o usuário autorizar.
+- `origin` aponta para o repositório privado do usuário (`git@github.com:daviferreirax/FastLive.git`); `upstream` aponta para o repositório do criador do PeekMe (`https://github.com/williampeixinho/PeekMe.git`). Nunca faça push para `upstream`; publique em `origin` quando autorizado pelo usuário.
 - As regras comuns para IAs estão em `AGENTS.md`; o procedimento está em `docs/AI-WORKFLOW.md`; o estado mais recente está em `docs/AI-HANDOFF.md`.
 
 ## Tags Git presentes

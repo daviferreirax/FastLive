@@ -26,4 +26,4 @@
 
 ## Próximo passo
 
-Configurar o repositório privado no GitHub do usuário (`daviferreirax`) na Fase 3 (renomear remoto `origin` original para `upstream`, apontar `origin` para o repositório privado do usuário e publicar branches/tags quando autorizado).
+Repositório privado `git@github.com:daviferreirax/FastLive.git` configurado como `origin` (e o repositório original renomeado para `upstream`), com as branches `production`, `staging` e todas as tags publicadas. Aguardar o próximo pedido do usuário. Confirmar o ambiente antes de editar se o usuário não o especificar. Não publicar alterações na produção sem pedido explícito.
