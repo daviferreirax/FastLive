@@ -7,11 +7,11 @@ services:
     network_mode: host
     environment:
       DOMAIN: ${DOMAIN:?defina DOMAIN no .env}
-      STAGING_DOMAIN: ${STAGING_DOMAIN:-}
       APP_PORT: ${APP_PORT:-3077}
       CADDY_HTTP_PORT: ${CADDY_HTTP_PORT:-8780}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./conf.d:/etc/caddy/conf.d:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
