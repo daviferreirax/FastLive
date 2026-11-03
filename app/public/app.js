@@ -1,4 +1,4 @@
-// PeekMe no navegador: transmitir ou assistir uma tela via LiveKit.
+// FastLive no navegador: transmitir ou assistir uma tela via LiveKit.
 const { Room, RoomEvent, Track, VideoPreset, AudioPresets, ConnectionQuality } = LivekitClient;
 
 const $ = id => document.getElementById(id);
@@ -33,7 +33,7 @@ function ended(title, text) {
   $('ended-title').textContent = title;
   $('ended-text').textContent = text;
   show('ended');
-  document.title = 'PeekMe';
+  document.title = 'FastLive';
 }
 
 // ---------- Transmitir ----------
@@ -391,7 +391,7 @@ async function startStream() {
     .on(RoomEvent.Reconnected, () => { $('host-status').textContent = ''; });
 
   history.replaceState(null, '', '/');
-  document.title = '🔴 Ao vivo · PeekMe';
+  document.title = '🔴 Ao vivo · FastLive';
   $('view-live').classList.remove('watch');
   $('host-panel').hidden = false;
   $('share').hidden = true;
@@ -446,7 +446,7 @@ async function watch(session) {
   const btn = $('join-form').querySelector('button');
   $('join-error').textContent = '';
   btn.disabled = true;
-  try { localStorage.setItem('peekme-name', $('name').value); } catch {}
+  try { localStorage.setItem('fastlive-name', $('name').value); } catch {}
 
   const room = new Room({ adaptiveStream: true, dynacast: true });
   // /api/enter já resolve o apelido público e devolve o código interno real.
@@ -477,7 +477,7 @@ async function watch(session) {
   }
   btn.disabled = false;
   setStatus('');
-  document.title = 'Assistindo · PeekMe';
+  document.title = 'Assistindo · FastLive';
 }
 
 // Espera o servidor liberar a publicação (chega pela conexão com o LiveKit).
@@ -583,7 +583,7 @@ $('tiles').addEventListener('click', e => {
 
 function prepareHostHome() {
   if (!window.isSecureContext) {
-    $('start-error').textContent = 'Para compartilhar a tela, abra o PeekMe pelo endereço com https:// (o seu domínio).';
+    $('start-error').textContent = 'Para compartilhar a tela, abra o FastLive pelo endereço com https:// (o seu domínio).';
     $('start-form').querySelector('button').disabled = true;
   } else if (!navigator.mediaDevices?.getDisplayMedia) {
     $('start-error').textContent = 'Este navegador não consegue compartilhar a tela. Use Chrome, Edge ou Firefox no computador.';
@@ -608,9 +608,9 @@ $('join-form').addEventListener('submit', e => {
 
 async function enterUnifiedLink() {
   try {
-    $('name').value = localStorage.getItem('peekme-name') || '';
+    $('name').value = localStorage.getItem('fastlive-name') || localStorage.getItem('peekme-name') || '';
   } catch {}
-  $('join-title').textContent = 'Conectando ao PeekMe';
+  $('join-title').textContent = 'Conectando ao FastLive';
   $('join-description').textContent = 'Verificando se você será o anfitrião ou um convidado…';
   show('join');
   try {

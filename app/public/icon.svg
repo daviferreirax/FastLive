@@ -1,1 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="2" y="5" width="28" height="19" rx="4" fill="#6c5ce7"/><rect x="11" y="26" width="10" height="2.5" rx="1.25" fill="#6c5ce7"/><circle cx="16" cy="14.5" r="5" fill="#fff"/><circle cx="16" cy="14.5" r="2.4" fill="#2d2a4a"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="fl-grad" x1="4" y1="32" x2="60" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1e40af"/>
+      <stop offset="35%" stop-color="#7e22ce"/>
+      <stop offset="68%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#ff5722"/>
+    </linearGradient>
+    <linearGradient id="fl-wave" x1="42" y1="10" x2="58" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ff5722"/>
+      <stop offset="60%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#9333ea"/>
+    </linearGradient>
+  </defs>
+  <!-- Speed lines -->
+  <rect x="10" y="16" width="5" height="3.6" rx="1.8" fill="url(#fl-grad)"/>
+  <rect x="16" y="16" width="10" height="3.6" rx="1.8" fill="url(#fl-grad)"/>
+  <rect x="12" y="22.5" width="12" height="3.6" rx="1.8" fill="url(#fl-grad)"/>
+  <rect x="6" y="29" width="6" height="3.6" rx="1.8" fill="url(#fl-grad)"/>
+  <rect x="14" y="29" width="10" height="3.6" rx="1.8" fill="url(#fl-grad)"/>
+  <rect x="2" y="35.5" width="7" height="3.6" rx="1.8" fill="url(#fl-grad)"/>
+  <rect x="11" y="35.5" width="13" height="3.6" rx="1.8" fill="url(#fl-grad)"/>
+  <rect x="8" y="42" width="5" height="3.6" rx="1.8" fill="url(#fl-grad)"/>
+  <rect x="15" y="42" width="9" height="3.6" rx="1.8" fill="url(#fl-grad)"/>
+  <!-- Play triangle outline -->
+  <path d="M23 16.5C23 13.5 26.3 11.7 28.9 13.3L44.2 22.8C46.7 24.3 46.7 27.9 44.2 29.5L28.9 39C26.3 40.6 23 38.8 23 35.8V16.5Z" transform="translate(0, 5.8)" stroke="url(#fl-grad)" stroke-width="6.5" stroke-linejoin="round"/>
+  <!-- Signal waves -->
+  <path d="M48.5 20C53.2 26.8 53.2 37.2 48.5 44" stroke="url(#fl-wave)" stroke-width="4.2" stroke-linecap="round"/>
+  <path d="M54.5 14C61.2 24.2 61.2 39.8 54.5 50" stroke="url(#fl-wave)" stroke-width="4.2" stroke-linecap="round"/>
+</svg>

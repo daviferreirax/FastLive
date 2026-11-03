@@ -22,7 +22,8 @@ body {
   flex-direction: column;
 }
 .top { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--surface-2); }
-.brand { display: flex; align-items: center; gap: 8px; color: var(--text); text-decoration: none; font-weight: 700; font-size: 18px; }
+.brand { display: flex; align-items: center; gap: 8px; color: var(--text); text-decoration: none; font-weight: 700; font-size: 19px; letter-spacing: -0.01em; }
+.brand-accent { color: #ff5722; }
 .badge { background: var(--danger); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .06em; padding: 2px 8px; border-radius: 4px; }
 
 .center { flex: 1; display: grid; place-items: center; padding: 24px 16px; }
