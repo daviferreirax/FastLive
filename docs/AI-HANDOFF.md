@@ -6,7 +6,7 @@
 
 - Produção: `/home/ubuntu/fastlive`, branch `production`. Containers migrados para `fastlive-app-1`, `fastlive-livekit-1`, `fastlive-caddy-1` e `fastlive-duckdns-1` (com volumes HTTPS `fastlive_caddy_data` e `fastlive_caddy_config` preservados).
 - Teste: `/home/ubuntu/fastlive-staging`, branch `staging`. Container migrado para `fastlive-app-staging` (projeto `fastlive-staging`).
-- Produção é acessada em `https://exemplo.duckdns.org`; teste em `https://teste.exemplo.duckdns.org` (raiz do domínio, sala única).
+- Produção é acessada na raiz do domínio principal configurado no `.env` (`https://${DOMAIN}`); teste na raiz do subdomínio de teste (`https://${STAGING_DOMAIN}`).
 - Toda a identidade do projeto e da infraestrutura da VPS foi migrada para **FastLive**.
 
 ## Comportamento implementado

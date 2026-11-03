@@ -4,7 +4,7 @@
 
 - Pasta: `/home/ubuntu/fastlive`
 - Branch local: `production`
-- Endereço: `https://exemplo.duckdns.org`
+- Endereço: `https://${DOMAIN}` (configurado no `.env` local)
 - Acesso: pela raiz do domínio (uma única sala; não é preciso caminho adicional)
 - Ponto de retorno criado antes do ambiente de teste: `production-stable-2026-10-30`
 - Tag de retorno antes do rebrand FastLive: `production-before-fastlive-rebrand-2026-11-03`
@@ -15,7 +15,7 @@
 - Pasta: `/home/ubuntu/fastlive-staging`
 - Branch local: `staging`
 - Arquivo Compose: `docker-compose.staging.yml`
-- Endereço: `https://teste.exemplo.duckdns.org`
+- Endereço: `https://${STAGING_DOMAIN}` (configurado no `.env` / `.env.staging` local)
 - Acesso: pela raiz do domínio (uma única sala; não é preciso caminho adicional)
 - Porta interna do app: `3078` (não abrir no firewall; o Caddy atende HTTPS na 443).
 
@@ -28,7 +28,7 @@ VPS; alterações no próprio LiveKit exigem planejamento separado.
 
 1. Fazer alterações somente em `/home/ubuntu/fastlive-staging` quando o usuário pedir
    trabalho no ambiente de teste.
-2. Conferir o teste em `https://teste.exemplo.duckdns.org`.
+2. Conferir o teste no endereço HTTPS de teste configurado.
 3. Só promover para `/home/ubuntu/fastlive` e reconstruir produção quando o usuário
    pedir explicitamente.
 4. Manter o tag `production-stable-2026-10-30` como ponto de retorno inicial.

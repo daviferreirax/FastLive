@@ -17,7 +17,7 @@ Leia este arquivo e, antes de qualquer alteração, leia também `AMBIENTES.md`,
 
 ## Estado funcional que deve ser preservado
 
-- O serviço é acessado pela raiz do domínio (`https://exemplo.duckdns.org` e `https://teste.exemplo.duckdns.org`), sem caminho adicional. A primeira pessoa recebe o papel de anfitrião; as seguintes entram como convidadas. Não há senha de transmissão.
+- O serviço é acessado pela raiz do domínio (`https://${DOMAIN}` e `https://${STAGING_DOMAIN}` configurados nos arquivos locais `.env`), sem caminho adicional. A primeira pessoa recebe o papel de anfitrião; as seguintes entram como convidadas. Não há senha de transmissão.
 - O checkbox de áudio começa desmarcado e a qualidade padrão é 1080p.
 - Para áudio específico de aplicativo, o anfitrião precisa selecionar a janela do jogo e habilitar o áudio da janela no seletor do Chrome/Edge compatível. Compartilhar o monitor inteiro ainda pode capturar a mixagem do Windows, incluindo o Discord.
 - Convidados podem compartilhar sua própria tela conforme o limite `MAX_SCREENS`; mantenha `/api/share` e `/api/unshare` usando o identificador interno real da sala.
