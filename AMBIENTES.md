@@ -48,6 +48,6 @@ VPS; alterações no próprio LiveKit exigem planejamento separado.
 ## Tags Git presentes
 
 - `v1.0.0` e `v1.1.0`: versões upstream.
-- `production-stable-2026-10-30`, `production-before-unified-entry-2026-10-30`, `production-before-window-audio-2026-11-02`, `production-before-fastlive-rebrand-2026-11-03` e `production-before-vps-rename-2026-11-03`: pontos de retorno da produção.
+- `production-stable-2026-10-30`, `production-before-unified-entry-2026-10-30`, `production-before-window-audio-2026-11-02`, `production-before-fastlive-rebrand-2026-11-03`, `production-before-vps-rename-2026-11-03` e `production-before-root-link-2026-11-03`: pontos de retorno da produção.
 
 Uma tag Git preserva um ponto no histórico do código, mas não salva `.env`, nem garante que uma imagem Docker antiga esteja disponível. Para voltar uma versão implantada, restaure o código aprovado e reconstrua o app; não remova tags.
