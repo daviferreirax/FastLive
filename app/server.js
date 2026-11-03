@@ -279,7 +279,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (pathname === '/healthz') return json(res, 200, { ok: true, version: VERSION });
     if (pathname === '/vendor/livekit-client.js') return serveFile(res, LK_CLIENT);
-    // /assistir/<codigo> e qualquer outra rota abrem o app
+    // A raiz (/), links antigos /assistir/<codigo> e qualquer outra rota abrem o app
     const file = path.normalize(path.join(PUBLIC_DIR, pathname));
     if (file.startsWith(PUBLIC_DIR + path.sep) && fs.existsSync(file) && fs.statSync(file).isFile()) return serveFile(res, file);
     serveFile(res, path.join(PUBLIC_DIR, 'index.html'));
