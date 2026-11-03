@@ -22,3 +22,6 @@
 	# Site do FastLive
 	reverse_proxy 127.0.0.1:{$APP_PORT:3077}
 }
+
+# Configurações extras opcionais (ex.: conf.d/staging.caddy)
+import /etc/caddy/conf.d/*.caddy

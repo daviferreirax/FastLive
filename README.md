@@ -176,7 +176,7 @@ Agora siga o seu cenário.
 **A1. Crie um domínio grátis no DuckDNS** (pule se já tiver um domínio apontando para a sua casa)
 
 1. Entre em https://www.duckdns.org com sua conta Google ou GitHub.
-2. Crie um subdomínio, por exemplo `meu-fastlive` (vira `meu-exemplo.duckdns.org`).
+2. Crie um subdomínio, por exemplo `meu-fastlive` (vira `meu-fastlive.duckdns.org`).
 3. Copie o **token** que aparece no topo da página. Ele é secreto.
 
 **A2. Abra (redirecione) as portas no roteador**
