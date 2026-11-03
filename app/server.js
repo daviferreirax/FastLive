@@ -1,4 +1,4 @@
-// PeekMe: site + emissor de tokens do LiveKit.
+// FastLive: site + emissor de tokens do LiveKit.
 // O vídeo não passa por aqui: vai do navegador de quem transmite para o LiveKit,
 // e do LiveKit para quem assiste.
 const http = require('http');
@@ -302,4 +302,4 @@ server.on('upgrade', (req, socket, head) => {
   socket.on('error', () => upstream.destroy());
 });
 
-server.listen(PORT, () => console.log(`PeekMe ${VERSION} rodando na porta ${PORT}`));
+server.listen(PORT, () => console.log(`FastLive ${VERSION} rodando na porta ${PORT}`));

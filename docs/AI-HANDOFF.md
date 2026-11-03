@@ -1,21 +1,20 @@
 # Estado para passagem entre IAs
 
-Última atualização: 2026-11-02.
+Última atualização: 2026-11-03.
 
 ## Estado atual
 
-- Produção: `/home/ubuntu/peekme`, branch `production`, commit `50e2ca8` (`Capture audio from selected window`). O app foi reconstruído e `/healthz` respondeu com sucesso.
-- Teste: `/home/ubuntu/peekme-staging`, branch `staging`, commit `5317534` (`Capture audio from selected window`). O usuário testou o áudio da janela em navegador real e confirmou que funcionou.
+- Produção: `/home/ubuntu/peekme`, branch `production`, commit `5c96708` (`Document shared AI project workflow`), rodando o código do commit `50e2ca8` (`Capture audio from selected window`).
+- Teste: `/home/ubuntu/peekme-staging`, branch `staging`. Projeto renomeado visualmente e nos metadados para **FastLive** (com novo ícone SVG vetorial `icon.svg`, título e textos em `index.html`, `style.css`, `app.js`, `server.js` e `package.json`), mantendo os nomes das pastas e containers da VPS intactos para não interromper o Docker/Caddy/LiveKit.
 - Produção mantém o link `https://exemplo.duckdns.org/assistir/sala1`; teste usa `https://teste.exemplo.duckdns.org/assistir/sala1`.
-- O áudio da janela foi promovido para produção a pedido do usuário. O teste e a produção continuam em containers separados, mas compartilham LiveKit, Caddy e recursos da VPS.
-- A produção estava sem salas ativas na última implantação. Nenhuma outra alteração está pendente neste momento.
+- O teste e a produção continuam em containers separados, mas compartilham LiveKit, Caddy e recursos da VPS.
 
 ## Comportamento implementado
 
+- Identidade visual **FastLive** no ambiente de teste (ícone SVG e cabeçalho estilizado).
 - Primeiro visitante é anfitrião; próximos são convidados pelo mesmo endereço. A senha de transmissão foi removida.
 - Áudio desmarcado inicialmente; 1080p selecionado por padrão.
 - A captura solicita `windowAudio: 'window'` temporariamente quando se cria a captura de tela. Com navegador compatível, escolher uma janela permite ao navegador oferecer áudio do aplicativo. Compartilhar o monitor inteiro ainda pode incluir todo o áudio do Windows.
-- O usuário confirmou a captura por janela no ambiente de teste. Depois pediu e confirmou a promoção para produção.
 
 ## Tags de retorno existentes
 
@@ -26,4 +25,4 @@
 
 ## Próximo passo
 
-Aguardar o próximo pedido. Confirmar o ambiente antes de editar se o usuário não o especificar. Não publicar alterações na produção sem pedido explícito.
+Aguardar validação visual do usuário no ambiente de teste (`https://teste.exemplo.duckdns.org/assistir/sala1`). Só promover para produção e configurar o repositório privado no GitHub após aprovação explícita do usuário.

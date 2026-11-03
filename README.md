@@ -1,6 +1,8 @@
-# PeekMe
+# FastLive
 
 Compartilhamento de tela simples e auto-hospedado, no estilo do "Go Live" do Discord, mas sem chat, sem servidores e sem contas. Uma pessoa transmite a tela (com áudio), manda um link, e os amigos assistem pelo navegador.
+
+> **FastLive** é um fork customizado do projeto [PeekMe](https://github.com/williampeixinho/PeekMe), adaptado com entrada unificada por link fixo (`/assistir/sala1`) sem senha, definição automática de anfitrião para o primeiro visitante, qualidade padrão em 1080p 60fps, áudio inicialmente desmarcado e suporte a captura de áudio por janela do aplicativo (`windowAudio`).
 
 - **Um link para todos:** abra `https://seu-dominio/assistir/sala1`. Se a sala estiver livre, você será anfitrião; se alguém já estiver nela, entrará como convidado.
 - **Transmitir:** o anfitrião escolhe a tela, janela ou aba e inicia. Não há senha de transmissão.

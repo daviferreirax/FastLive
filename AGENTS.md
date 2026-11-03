@@ -9,7 +9,7 @@ Leia este arquivo e, antes de qualquer alteração, leia também `AMBIENTES.md`,
 - Se o usuário pedir uma alteração sem dizer o ambiente e o contexto não deixar isso claro, pergunte antes de editar ou implantar. Nunca promova para produção sem pedido explícito.
 - Não altere o checkout de produção durante um trabalho de teste. Não altere o checkout de teste durante uma publicação, salvo se for necessário registrar a mesma documentação nos dois ambientes.
 - Confira `git status` antes de editar. Preserve alterações não commitadas de qualquer pessoa; não use `reset --hard`, `clean`, descarte de alterações ou troca de branch para contornar conflitos.
-- Faça commits locais claros para que outra IA possa continuar pelo Git. Não faça `git push` para `origin`: ele aponta para o repositório do criador do PeekMe, não para um repositório do usuário. Só publique em um remoto do usuário se ele pedir explicitamente.
+- Faça commits locais claros para que outra IA possa continuar pelo Git. Não faça `git push` para o repositório original do criador do PeekMe (`williampeixinho/PeekMe`). Só publique em um remoto do usuário se ele pedir explicitamente.
 - Nunca leia, imprima, copie para o Git ou inclua em respostas valores de `.env`, `.env.staging`, tokens, senhas ou chaves. Esses arquivos são locais e ignorados pelo Git.
 - Produção e teste compartilham o mesmo servidor LiveKit e os recursos da VPS. Antes de reiniciar o app de produção, confira se há sala ativa e avise se o reinício puder interromper alguém.
 - Ao implantar, reconstrua somente o serviço `app` do ambiente autorizado. Não derrube nem recrie LiveKit, Caddy, DuckDNS ou outros serviços para uma alteração comum da aplicação.
