@@ -58,13 +58,19 @@ button:disabled { opacity: .6; cursor: wait; }
 video { width: 100%; height: 100%; object-fit: contain; display: block; }
 .panel { background: var(--surface); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 8px; }
 .panel h2 { margin: 0 0 8px; font-size: 18px; }
-.panel .danger { margin-top: auto; }
+.panel-actions { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
 .row { display: flex; gap: 8px; }
 .row input { min-width: 0; }
 .viewers { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
 .viewers li { background: var(--surface-2); border-radius: 6px; padding: 4px 10px; font-size: 14px; }
 
 .overlay { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); background: rgba(0,0,0,.6); }
+.video-wrap:fullscreen:not(.show-controls),
+.video-wrap:fullscreen:not(.show-controls) *,
+.video-wrap:-webkit-full-screen:not(.show-controls),
+.video-wrap:-webkit-full-screen:not(.show-controls) * {
+  cursor: none !important;
+}
 .controls {
   position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 8px;
   padding: 10px 14px; background: linear-gradient(transparent, rgba(0,0,0,.75));
@@ -73,16 +79,36 @@ video { width: 100%; height: 100%; object-fit: contain; display: block; }
 .video-wrap.show-controls .controls, .controls:has(:focus-visible) { opacity: 1; pointer-events: auto; }
 .controls button { background: transparent; padding: 6px 8px; font-size: 18px; }
 .controls input[type=range] { width: 100px; accent-color: var(--accent); }
-.spacer { flex: 1; }
-.stream-quality {
-  position: absolute; top: 12px; right: 12px; z-index: 2;
-  padding: 4px 9px; border-radius: 6px;
-  background: rgba(0, 0, 0, .65); color: var(--text);
-  font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
-  pointer-events: none; opacity: 0; transition: opacity .2s;
+.controls .quality-select {
+  width: auto; padding: 5px 8px; font-size: 13px; border-radius: 6px;
+  background: rgba(42, 45, 54, .9); border: 1px solid rgba(255, 255, 255, .14);
+  cursor: pointer;
 }
-.video-wrap.has-tabs .stream-quality { top: 56px; }
-.video-wrap.show-controls .stream-quality { opacity: 1; }
+.spacer { flex: 1; }
+.quality-box {
+  position: absolute; top: 12px; right: 12px; z-index: 3;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.video-wrap.has-tabs .quality-box { top: 56px; }
+.video-wrap.show-controls .quality-box,
+.quality-box.stats-open { opacity: 1; pointer-events: auto; }
+.stream-quality {
+  padding: 4px 9px; border-radius: 6px;
+  background: rgba(0, 0, 0, .68); color: var(--text);
+  font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+.stream-quality:hover { background: rgba(0, 0, 0, .85); filter: none; }
+.stream-stats {
+  margin: 0; padding: 8px 10px; border-radius: 8px; min-width: 185px;
+  background: rgba(15, 16, 22, .86); border: 1px solid rgba(255, 255, 255, .12);
+  display: grid; grid-template-columns: auto 1fr; gap: 3px 12px;
+  font-size: 12px; font-variant-numeric: tabular-nums;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .45);
+}
+.stream-stats dt { color: var(--muted); }
+.stream-stats dd { margin: 0; text-align: right; font-weight: 600; }
 
 @media (max-width: 760px) {
   .stage { grid-template-columns: 1fr; grid-template-rows: auto auto; }
@@ -100,12 +126,31 @@ video { width: 100%; height: 100%; object-fit: contain; display: block; }
 .grid .tile:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
 .tile-name { display: none; position: absolute; left: 8px; top: 8px; background: rgba(0,0,0,.65); padding: 2px 8px; border-radius: 6px; font-size: 13px; }
 .grid .tile-name { display: block; }
+.tile-audio {
+  display: none; position: absolute; right: 8px; top: 8px; z-index: 2;
+  align-items: center; gap: 4px; padding: 3px 6px; border-radius: 6px;
+  background: rgba(0, 0, 0, .72);
+}
+.grid .tile-audio { display: flex; }
+.tile-audio button { background: transparent; padding: 2px 5px; font-size: 14px; border-radius: 4px; }
+.tile-audio button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.tile-audio input[type=range] { width: 62px; accent-color: var(--accent); cursor: pointer; }
 .tabs { position: absolute; top: 0; left: 0; right: 0; z-index: 1; display: flex; gap: 6px; padding: 10px 12px; overflow-x: auto; background: linear-gradient(rgba(0,0,0,.7), transparent); }
 .tabs button { padding: 6px 12px; font-size: 13px; white-space: nowrap; background: rgba(42,45,54,.9); }
 .tabs button[aria-pressed="true"] { background: var(--accent); color: #fff; }
 .controls .share { font-size: 14px; padding: 6px 12px; background: var(--accent); color: #fff; }
+.controls .share.secondary { background: rgba(42, 45, 54, .92); color: var(--text); }
 .controls .share.danger { background: var(--danger); }
-.toast { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); z-index: 2; margin: 0; max-width: min(520px, calc(100% - 32px)); background: var(--surface); border: 1px solid var(--surface-2); border-radius: 8px; padding: 10px 14px; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,.4); }
+.toast { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); z-index: 2; margin: 0; max-width: min(520px, calc(100% - 32px)); background: var(--surface); border: 1px solid var(--surface-2); border-radius: 8px; padding: 10px 14px; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,.4); pointer-events: none; }
+.dialog {
+  background: var(--surface); color: var(--text); border: 1px solid var(--surface-2);
+  border-radius: var(--radius); padding: 24px; width: min(400px, calc(100% - 32px));
+  box-shadow: 0 12px 36px rgba(0, 0, 0, .6);
+}
+.dialog::backdrop { background: rgba(0, 0, 0, .65); }
+.dialog h2 { margin: 0 0 4px; font-size: 19px; }
+.dialog form { margin-top: 8px; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 @media (max-width: 760px) {
   .tiles { grid-template-columns: 1fr; }
 }
