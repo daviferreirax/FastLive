@@ -70,7 +70,7 @@ const PREFERRED_VIDEO_CODEC = preferredVideoCodec();
 const SCREEN_PUBLISH = {
   videoCodec: PREFERRED_VIDEO_CODEC,
   backupCodec: PREFERRED_VIDEO_CODEC === 'h264' ? { codec: 'vp8' } : false,
-  simulcast: true,
+  simulcast: false,
   degradationPreference: 'maintain-framerate',
   audioPreset: AudioPresets.musicHighQualityStereo,
   dtx: false,
@@ -117,7 +117,7 @@ async function publishCapturedTracks(room, tracks, q, audio) {
   const lp = room.localParticipant;
   try {
     for (const track of tracks) {
-      await lp.publishTrack(track, { ...SCREEN_PUBLISH, screenShareEncoding: q.encoding, screenShareSimulcastLayers: q.layers });
+      await lp.publishTrack(track, { ...SCREEN_PUBLISH, screenShareEncoding: q.encoding });
     }
   } catch (err) {
     tracks.forEach(t => t.stop());
@@ -425,8 +425,12 @@ function render() {
   const shown = !grid && tiles.get(focus);
   $('no-audio').hidden = !(shown && !shown.isLocal && Date.now() - shown.videoAt > 2500 && !hasAudio(shown.participant));
 
-  const hasRemoteVideo = list.some(t => !t.isLocal);
-  $('watch-quality').hidden = !(shown ? !shown.isLocal : hasRemoteVideo);
+  const hasMultiLayer = pub => (pub?.trackInfo?.layers?.length || 0) > 1;
+  const shownPub = shown?.participant?.getTrackPublication(Track.Source.ScreenShare);
+  const canPickQuality = shown
+    ? (!shown.isLocal && hasMultiLayer(shownPub))
+    : list.some(t => !t.isLocal && hasMultiLayer(t.participant.getTrackPublication(Track.Source.ScreenShare)));
+  $('watch-quality').hidden = !canPickQuality;
 
   const canSwitch = canCapture && (live?.role === 'host' || (live?.role === 'viewer' && sharing));
   $('switch-screen').hidden = !canSwitch;
