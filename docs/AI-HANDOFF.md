@@ -27,6 +27,7 @@
 - **Somente em teste (`staging`)**:
   - Codec preferencial de transmissão alterado para **H.264** (com fallback automático para **VP8** via `backupCodec` quando necessário), buscando usar encoder/decoder por hardware.
   - Estatísticas sob demanda exibem também `Encoder`/`Decoder` (`Hardware` ou `Software`) e, para quem transmite, `Limite` (`Nenhum`, `CPU` ou `Rede (upload)`).
+  - Framerate travado em **30 fps** em todas as qualidades (`1080p`, `720p` e camadas de simulcast `720p`/`360p`) para reduzir uso de CPU/GPU e upload.
 
 ## Tags de retorno existentes
 
@@ -45,4 +46,4 @@
 
 ## Próximo passo
 
-Repositório privado `git@github.com:daviferreirax/FastLive.git` configurado como `origin`. Commits locais e tag de retorno `production-before-player-enhancements-2026-11-26` registrados em `production` e `staging` (ainda sem `git push` para `origin`). Teste do codec `H.264` com fallback para `VP8` e indicadores de hardware/limite implantado apenas em `/home/ubuntu/fastlive-staging` (`staging`), aguardando validação do usuário antes de promover para produção.
+Repositório privado `git@github.com:daviferreirax/FastLive.git` configurado como `origin`. Commits locais e tag de retorno `production-before-player-enhancements-2026-11-26` registrados em `production` e `staging` (ainda sem `git push` para `origin`). Teste de `H.264` com fallback `VP8`, indicadores de hardware/limite e trava em `30 fps` implantado apenas em `/home/ubuntu/fastlive-staging` (`staging`), aguardando validação do usuário antes de promover para produção.

@@ -43,14 +43,14 @@ function ended(title, text) {
 // As camadas menores servem quem tem internet fraca.
 const QUALITIES = {
   '720': {
-    resolution: { width: 1280, height: 720, frameRate: 60 },
-    encoding: { maxBitrate: 3_000_000, maxFramerate: 60 },
+    resolution: { width: 1280, height: 720, frameRate: 30 },
+    encoding: { maxBitrate: 3_000_000, maxFramerate: 30 },
     layers: [new VideoPreset(640, 360, 600_000, 30)],
   },
   '1080': {
-    resolution: { width: 1920, height: 1080, frameRate: 60 },
-    encoding: { maxBitrate: 5_000_000, maxFramerate: 60 },
-    layers: [new VideoPreset(640, 360, 600_000, 30), new VideoPreset(1280, 720, 2_500_000, 60)],
+    resolution: { width: 1920, height: 1080, frameRate: 30 },
+    encoding: { maxBitrate: 5_000_000, maxFramerate: 30 },
+    layers: [new VideoPreset(640, 360, 600_000, 30), new VideoPreset(1280, 720, 2_500_000, 30)],
   },
 };
 const SCREEN_CAPTURE = {
