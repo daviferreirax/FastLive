@@ -145,7 +145,7 @@ async function createViewerSession(room, name, hostLive = true) {
   const displayName = String(name || '').trim().slice(0, 24) || 'Alguém';
   const identity = `v-${crypto.randomBytes(6).toString('hex')}`;
   const jwt = await token(room, identity, displayName, { canPublish: false, canSubscribe: true, canPublishData: false });
-  return { role: 'viewer', room, hostLive, token: jwt, url: LIVEKIT_PUBLIC_URL, iceServers: await iceServers(), identity, key: viewerKey(room, identity), maxScreens: MAX_SCREENS };
+  return { role: 'viewer', room, hostLive, token: jwt, url: LIVEKIT_PUBLIC_URL, iceServers: await iceServers(), identity, key: viewerKey(room, identity), maxViewers: MAX_VIEWERS, maxScreens: MAX_SCREENS };
 }
 
 // O servidor escolhe o papel atomicamente, inclusive quando várias pessoas abrem o link juntas.
