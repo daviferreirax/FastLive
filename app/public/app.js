@@ -264,6 +264,8 @@ function tileFor(participant) {
     hasVideo: false,
     videoAt: 0,
     lastStats: null,
+    lastAccel: '',
+    lastLimit: '',
     muted: false,
     volume: 1,
     audioControls,
@@ -346,6 +348,8 @@ function showLocalScreen(room, video) {
   tile.video.srcObject = new MediaStream([video.mediaStreamTrack]);
   tile.hasVideo = true;
   tile.lastStats = null;
+  tile.lastAccel = '';
+  tile.lastLimit = '';
   render();
 }
 
@@ -483,6 +487,8 @@ function wireRoom(room) {
         tile.hasVideo = true;
         tile.videoAt = Date.now();
         tile.lastStats = null;
+        tile.lastAccel = '';
+        tile.lastLimit = '';
         applyWatchQualityToPub(pub);
         setTimeout(render, 3000);
       } else if (track.kind === Track.Kind.Audio) {
@@ -916,6 +922,22 @@ function formatBitrate(bps) {
 
 const LIMIT_LABELS = { none: 'Nenhum', cpu: 'CPU', bandwidth: 'Rede (upload)', other: 'Outro' };
 
+function describeAccel(powerEfficient, impl) {
+  const text = typeof impl === 'string' ? impl.trim() : '';
+  if (text) {
+    const hasHw = /External|MediaFoundation|D3D11|DXVA|NVENC|NVDEC|AMF|QSV|VAAPI|VideoToolbox|VDAVideo|MediaCodec/i.test(text);
+    const hasSw = /libvpx|OpenH264|FFmpeg|dav1d|libaom|Software/i.test(text);
+    if (hasHw && hasSw) return 'Misto (GPU+CPU)';
+    if (hasHw) return 'Hardware';
+    if (hasSw) {
+      const swName = text.match(/OpenH264|FFmpeg|libvpx|dav1d|libaom/i)?.[0];
+      return swName ? `Software (${swName})` : 'Software';
+    }
+  }
+  if (typeof powerEfficient === 'boolean') return powerEfficient ? 'Hardware' : 'Software';
+  return '';
+}
+
 async function readTileStreamQuality(tile) {
   let width = tile.video.videoWidth || 0;
   let height = tile.video.videoHeight || 0;
@@ -925,7 +947,7 @@ async function readTileStreamQuality(tile) {
   let lossPct = null;
   let jitter = null;
   let rtt = null;
-  let hwAccel = null;
+  let accel = '';
   let limitReason = '';
 
   const track = tile.participant.getTrackPublication(Track.Source.ScreenShare)?.track;
@@ -979,7 +1001,7 @@ async function readTileStreamQuality(tile) {
             lossPct = Math.max(0, (inbound.packetsLost / (inbound.packetsReceived + inbound.packetsLost)) * 100);
           }
           if (Number.isFinite(inbound.jitter) && inbound.jitter >= 0) jitter = inbound.jitter;
-          if (typeof inbound.powerEfficientDecoder === 'boolean') hwAccel = inbound.powerEfficientDecoder;
+          accel = describeAccel(inbound.powerEfficientDecoder, inbound.decoderImplementation);
           if (inbound.codecId && codecs.get(inbound.codecId)?.mimeType) {
             codec = codecs.get(inbound.codecId).mimeType.replace(/^video\//i, '').toUpperCase();
           }
@@ -1024,7 +1046,7 @@ async function readTileStreamQuality(tile) {
           if (best.codecId && codecs.get(best.codecId)?.mimeType) {
             codec = codecs.get(best.codecId).mimeType.replace(/^video\//i, '').toUpperCase();
           }
-          if (typeof best.powerEfficientEncoder === 'boolean') hwAccel = best.powerEfficientEncoder;
+          accel = describeAccel(best.powerEfficientEncoder, best.encoderImplementation);
           if (typeof best.qualityLimitationReason === 'string' && best.qualityLimitationReason) {
             limitReason = LIMIT_LABELS[best.qualityLimitationReason] || best.qualityLimitationReason;
           }
@@ -1052,6 +1074,11 @@ async function readTileStreamQuality(tile) {
     }
   }
 
+  if (accel) tile.lastAccel = accel;
+  else accel = tile.lastAccel;
+  if (limitReason) tile.lastLimit = limitReason;
+  else if (tile.isLocal) limitReason = tile.lastLimit;
+
   const res = width > 0 && height > 0 ? Math.min(width, height) : 0;
   if (!res) return { label: '', details: [] };
   const label = fps >= 1 ? `${res}p · ${Math.round(fps)} fps` : `${res}p`;
@@ -1062,7 +1089,7 @@ async function readTileStreamQuality(tile) {
   const bitrateText = formatBitrate(bitrate);
   if (bitrateText) details.push(['Bitrate', bitrateText]);
   if (codec) details.push(['Codec', codec]);
-  if (hwAccel !== null) details.push([tile.isLocal ? 'Encoder' : 'Decoder', hwAccel ? 'Hardware' : 'Software']);
+  if (accel) details.push([tile.isLocal ? 'Encoder' : 'Decoder', accel]);
   if (tile.isLocal && limitReason) details.push(['Limite', limitReason]);
   if (!tile.isLocal && lossPct !== null) {
     details.push(['Perda', lossPct === 0 ? '0%' : `${lossPct.toFixed(1).replace('.', ',')}%`]);
