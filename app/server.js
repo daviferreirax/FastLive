@@ -39,7 +39,7 @@ const ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789';
 const HOST_ID = 'host';
 
 // Uma única reserva/sala por vez. O primeiro visitante recebe o papel de anfitrião.
-let current = null; // { room, hostSecret, lastHeartbeat }
+let current = null; // { room, hostSecret, lastHeartbeat, hostLeft }
 const HOST_RESERVATION_TTL_MS = 90_000;
 let sessionQueue = Promise.resolve();
 
@@ -63,14 +63,41 @@ function newCode() {
   return Array.from(crypto.randomBytes(8), b => ALPHABET[b % ALPHABET.length]).join('');
 }
 
-// A transmissão atual ainda está no ar? (a sala existe e o transmissor está nela)
-async function isLive(room) {
+function isBroadcaster(p, ignoreHost = false) {
+  if (ignoreHost && p.identity === HOST_ID) return false;
+  return Boolean(
+    p.permission?.canPublish ||
+    p.tracks?.some(t => t.source === TrackSource.SCREEN_SHARE)
+  );
+}
+
+// A transmissão atual ainda está no ar? (anfitrião presente ou algum convidado transmitindo)
+async function isLive(room, ignoreHost = false) {
   try {
     const list = await rooms.listParticipants(room);
-    return list.some(p => p.identity === HOST_ID);
+    return list.some(p => (!ignoreHost && p.identity === HOST_ID) || isBroadcaster(p, ignoreHost));
   } catch {
     return false;
   }
+}
+
+// Encerra a sala se não houver mais anfitrião ativo/reservado nem ninguém transmitindo.
+async function maybeCloseAbandonedRoom(room) {
+  if (!current || current.room !== room) return false;
+  const reservationFresh = !current.hostLeft && (Date.now() - current.lastHeartbeat < HOST_RESERVATION_TTL_MS);
+  let list;
+  try {
+    list = await rooms.listParticipants(room);
+  } catch {
+    current = null;
+    return true;
+  }
+  const hostPresent = !current.hostLeft && list.some(p => p.identity === HOST_ID);
+  const anyBroadcaster = list.some(p => isBroadcaster(p, current.hostLeft));
+  if (hostPresent || reservationFresh || anyBroadcaster) return false;
+  await rooms.deleteRoom(room).catch(() => {});
+  current = null;
+  return true;
 }
 
 // TURN do Cloudflare (opcional): necessário quando a internet da casa usa CGNAT
@@ -130,7 +157,7 @@ function readBody(req) {
 async function createHostSession() {
   const room = newCode();
   await rooms.createRoom({ name: room, maxParticipants: MAX_VIEWERS + 1, emptyTimeout: 60, departureTimeout: 20 });
-  current = { room, hostSecret: crypto.randomBytes(16).toString('hex'), lastHeartbeat: Date.now() };
+  current = { room, hostSecret: crypto.randomBytes(16).toString('hex'), lastHeartbeat: Date.now(), hostLeft: false };
   const jwt = await token(room, HOST_ID, 'Anfitrião', { canPublish: true, canSubscribe: true, canPublishData: false });
   return { role: 'host', room, watchCode: STATIC_WATCH_SLUG || room, token: jwt, url: LIVEKIT_PUBLIC_URL, iceServers: await iceServers(), hostSecret: current.hostSecret, maxViewers: MAX_VIEWERS, maxScreens: MAX_SCREENS };
 }
@@ -153,8 +180,8 @@ async function enter(req, res) {
   const body = await readBody(req);
   const session = await serializeSession(async () => {
     if (current) {
-      const hostLive = await isLive(current.room);
-      const reservationFresh = Date.now() - current.lastHeartbeat < HOST_RESERVATION_TTL_MS;
+      const hostLive = await isLive(current.room, current.hostLeft);
+      const reservationFresh = !current.hostLeft && Date.now() - current.lastHeartbeat < HOST_RESERVATION_TTL_MS;
       if (hostLive || reservationFresh) return createViewerSession(current.room, body.name, hostLive);
       await rooms.deleteRoom(current.room).catch(() => {});
       current = null;
@@ -168,7 +195,7 @@ async function enter(req, res) {
 async function heartbeat(req, res) {
   const body = await readBody(req);
   const result = await serializeSession(async () => {
-    if (!current || body.room !== current.room || body.hostSecret !== current.hostSecret) {
+    if (!current || current.hostLeft || !current.hostSecret || body.room !== current.room || body.hostSecret !== current.hostSecret) {
       return { status: 403, body: { error: 'A reserva de anfitrião expirou. Abra o link novamente.' } };
     }
     current.lastHeartbeat = Date.now();
@@ -181,12 +208,19 @@ async function heartbeat(req, res) {
 async function stop(req, res) {
   const body = await readBody(req);
   const result = await serializeSession(async () => {
-    if (!current || body.room !== current.room || body.hostSecret !== current.hostSecret) {
+    if (!current || current.hostLeft || !current.hostSecret || body.room !== current.room || body.hostSecret !== current.hostSecret) {
       return { status: 403, body: { error: 'Não autorizado.' } };
+    }
+    const list = await rooms.listParticipants(current.room).catch(() => []);
+    const otherBroadcaster = list.some(p => isBroadcaster(p, true));
+    if (otherBroadcaster) {
+      current.hostLeft = true;
+      current.hostSecret = null;
+      return { status: 200, body: { ok: true, keptAlive: true } };
     }
     await rooms.deleteRoom(current.room).catch(() => {});
     current = null;
-    return { status: 200, body: { ok: true } };
+    return { status: 200, body: { ok: true, keptAlive: false } };
   });
   json(res, result.status, result.body);
 }
@@ -196,7 +230,7 @@ async function watch(req, res) {
   const body = await readBody(req);
   const requested = String(body.room || '').toLowerCase();
   const room = STATIC_WATCH_SLUG && requested === STATIC_WATCH_SLUG ? current?.room : requested;
-  if (!current || room !== current.room || !await isLive(room)) {
+  if (!current || room !== current.room || !await isLive(room, current.hostLeft)) {
     return json(res, 404, { error: 'Essa transmissão não está no ar.' });
   }
   // Quem assiste entra sem poder publicar; /api/share libera a publicação por tela.
@@ -241,6 +275,7 @@ async function unshare(req, res) {
   const room = String(body.room || '');
   if (!current || room !== current.room || !checkViewerKey(room, body.identity, body.key)) return json(res, 403, { error: 'Não autorizado.' });
   await setCanPublish(room, String(body.identity), false).catch(() => {});
+  await serializeSession(() => maybeCloseAbandonedRoom(room));
   json(res, 200, { ok: true });
 }
 
@@ -301,5 +336,16 @@ server.on('upgrade', (req, socket, head) => {
   upstream.on('error', () => socket.destroy());
   socket.on('error', () => upstream.destroy());
 });
+
+// Quando o anfitrião já saiu (ou sua reserva expirou), verifica periodicamente
+// se ainda há alguém transmitindo; se o último transmissor cair sem chamar /api/unshare,
+// encerra a sala assim que o LiveKit o remover.
+setInterval(() => {
+  if (!current) return;
+  const room = current.room;
+  const shouldCheck = current.hostLeft || (Date.now() - current.lastHeartbeat >= HOST_RESERVATION_TTL_MS);
+  if (!shouldCheck) return;
+  serializeSession(() => maybeCloseAbandonedRoom(room)).catch(err => console.error('Erro ao verificar sala ativa:', err));
+}, 5_000).unref();
 
 server.listen(PORT, () => console.log(`FastLive ${VERSION} rodando na porta ${PORT}`));

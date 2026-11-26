@@ -24,6 +24,7 @@
   - Avisos discretos (`toast`) quando alguém entra, sai ou inicia/troca transmissão.
   - Controles individuais de áudio por quadro no modo grade (mudo, volume relativo e botão "ouvir só esta tela").
   - Lista de pessoas na sala (`👥` / tecla `P`) para convidados (e para o anfitrião em tela cheia), exibindo contagem `X de Y assistindo` e status `· transmitindo`.
+  - Continuidade da sala após saída do anfitrião enquanto houver ao menos um convidado transmitindo, encerrando automaticamente quando o último transmissor parar ou sair.
 
 ## Tags de retorno existentes
 
