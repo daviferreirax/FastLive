@@ -1,11 +1,11 @@
 # Estado para passagem entre IAs
 
-Última atualização: 2026-11-03.
+Última atualização: 2026-11-25.
 
 ## Estado atual
 
-- Produção: `/home/ubuntu/fastlive`, branch `production`. Containers migrados para `fastlive-app-1`, `fastlive-livekit-1`, `fastlive-caddy-1` e `fastlive-duckdns-1` (com volumes HTTPS `fastlive_caddy_data` e `fastlive_caddy_config` preservados).
-- Teste: `/home/ubuntu/fastlive-staging`, branch `staging`. Container migrado para `fastlive-app-staging` (projeto `fastlive-staging`).
+- Produção: `/home/ubuntu/fastlive`, branch `production`. Containers migrados para `fastlive-app-1`, `fastlive-livekit-1`, `fastlive-caddy-1` e `fastlive-duckdns-1` (com volumes HTTPS `fastlive_caddy_data` e `fastlive_caddy_config` preservados). Produção permanece inalterada em relação à última promoção (`5d0aeb9`).
+- Teste: `/home/ubuntu/fastlive-staging`, branch `staging`. Container `fastlive-app-staging` (projeto `fastlive-staging`).
 - Produção é acessada na raiz do domínio principal configurado no `.env` (`https://${DOMAIN}`); teste na raiz do subdomínio de teste (`https://${STAGING_DOMAIN}`).
 - Toda a identidade do projeto e da infraestrutura da VPS foi migrada para **FastLive**.
 
@@ -15,6 +15,9 @@
 - Primeiro visitante é anfitrião; próximos são convidados pelo mesmo endereço. A senha de transmissão foi removida.
 - Áudio desmarcado inicialmente; 1080p selecionado por padrão.
 - A captura solicita `windowAudio: 'window'` temporariamente quando se cria a captura de tela. Com navegador compatível, escolher uma janela permite ao navegador oferecer áudio do aplicativo. Compartilhar o monitor inteiro ainda pode incluir todo o áudio do Windows.
+- **Somente em teste (`staging`)**:
+  - Overlay discreta no canto superior direito (`#stream-quality`) mostrando resolução e FPS reais da stream em foco (ex.: `1080p · 60 fps`), exibida apenas enquanto os controles estão ativos (oculta em modo grade ou sem vídeo).
+  - Barra de controles do rodapé (`.controls`) e overlay de qualidade ocultam automaticamente após 3 segundos de inatividade do cursor sobre o vídeo, somem imediatamente ao sair da área do vídeo e reaparecem ao movimentar o mouse.
 
 ## Tags de retorno existentes
 
@@ -32,4 +35,4 @@
 
 ## Próximo passo
 
-Repositório privado `git@github.com:daviferreirax/FastLive.git` configurado como `origin`, com as branches `production`, `staging` e todas as tags publicadas. Aguardar o próximo pedido do usuário. Confirmar o ambiente antes de editar se o usuário não o especificar. Não publicar alterações na produção sem pedido explícito.
+Repositório privado `git@github.com:daviferreirax/FastLive.git` configurado como `origin`. Alterações de overlay de qualidade e auto-ocultamento de controles em 3s aplicadas apenas no ambiente de teste (`/home/ubuntu/fastlive-staging`, branch `staging`), aguardando validação manual do usuário para eventual promoção à produção mediante pedido explícito.
