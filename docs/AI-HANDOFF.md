@@ -16,8 +16,13 @@
 - Áudio desmarcado inicialmente; 1080p selecionado por padrão.
 - A captura solicita `windowAudio: 'window'` temporariamente quando se cria a captura de tela. Com navegador compatível, escolher uma janela permite ao navegador oferecer áudio do aplicativo. Compartilhar o monitor inteiro ainda pode incluir todo o áudio do Windows.
 - **Somente em teste (`staging`)**:
-  - Overlay discreta no canto superior direito (`#stream-quality`) mostrando resolução e FPS reais da stream em foco (ex.: `1080p · 60 fps`), exibida apenas enquanto os controles estão ativos (oculta em modo grade ou sem vídeo).
-  - Barra de controles do rodapé (`.controls`) e overlay de qualidade ocultam automaticamente após 3 segundos de inatividade do cursor sobre o vídeo, somem imediatamente ao sair da área do vídeo e reaparecem ao movimentar o mouse.
+  - Overlay discreta no canto superior direito (`#stream-quality`) mostrando resolução e FPS reais da stream em foco (ex.: `1080p · 60 fps`), clicável (ou tecla `I`) para expandir estatísticas extras sob demanda (resolução exata, quadros, bitrate, codec, perda, jitter e latência).
+  - Barra de controles do rodapé (`.controls`), overlay de qualidade e cursor em tela cheia ocultam automaticamente após 3 segundos de inatividade do mouse sobre o vídeo, somem ao sair da área do vídeo e reaparecem ao movimentar o mouse.
+  - Atalhos de teclado no player (`F` tela cheia, `M` mudo, `↑`/`↓` volume, `G` grade, `1`–`9` telas, `I` estatísticas, `Esc` fecha estatísticas).
+  - Seletor manual de qualidade (`Auto` / `1080p` / `720p` / `360p`) para quem assiste.
+  - Diálogo reutilizável para convidados escolherem qualidade (`1080p` padrão / `720p`) e áudio (desmarcado por padrão) antes de transmitir, além de botão **Trocar tela** (anfitrião e convidado transmitindo) sem encerrar a sala.
+  - Avisos discretos (`toast`) quando alguém entra, sai ou inicia/troca transmissão.
+  - Controles individuais de áudio por quadro no modo grade (mudo, volume relativo e botão "ouvir só esta tela").
 
 ## Tags de retorno existentes
 
@@ -35,4 +40,4 @@
 
 ## Próximo passo
 
-Repositório privado `git@github.com:daviferreirax/FastLive.git` configurado como `origin`. Alterações de overlay de qualidade e auto-ocultamento de controles em 3s aplicadas apenas no ambiente de teste (`/home/ubuntu/fastlive-staging`, branch `staging`), aguardando validação manual do usuário para eventual promoção à produção mediante pedido explícito.
+Repositório privado `git@github.com:daviferreirax/FastLive.git` configurado como `origin`. Novos recursos do player, troca de tela sem derrubar a sala, opções de transmissão para convidados e controles individuais de áudio na grade aplicados apenas no ambiente de teste (`/home/ubuntu/fastlive-staging`, branch `staging`), aguardando validação manual do usuário para eventual promoção à produção mediante pedido explícito.

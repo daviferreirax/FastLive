@@ -38,18 +38,44 @@
       <nav id="tabs" class="tabs" aria-label="Escolher tela" hidden></nav>
       <div id="tiles" class="tiles"></div>
       <div id="waiting" class="overlay">Conectando…</div>
-      <span id="stream-quality" class="stream-quality" hidden></span>
+      <div id="quality-box" class="quality-box" hidden>
+        <button id="stream-quality" class="stream-quality" type="button" aria-expanded="false" aria-controls="stream-stats" title="Ver estatísticas da transmissão (I)"></button>
+        <dl id="stream-stats" class="stream-stats" hidden></dl>
+      </div>
       <button id="unmute" class="unmute primary" type="button" hidden>🔊 Clique para ativar o som</button>
       <p id="toast" class="toast" role="status" hidden></p>
       <div class="controls">
-        <button id="mute" type="button" title="Som">🔊</button>
+        <button id="mute" type="button" title="Som (M)">🔊</button>
         <input id="volume" type="range" min="0" max="1" step="0.05" value="1" aria-label="Volume">
         <span class="spacer"></span>
         <span id="no-audio" class="small" hidden>Tela sem áudio</span>
         <span id="quality" class="small"></span>
+        <select id="watch-quality" class="quality-select" aria-label="Qualidade do vídeo" title="Qualidade do vídeo" hidden>
+          <option value="auto" selected>Auto</option>
+          <option value="1080">1080p</option>
+          <option value="720">720p</option>
+          <option value="360">360p</option>
+        </select>
+        <button id="switch-screen" class="share secondary" type="button" hidden>🔄 Trocar tela</button>
         <button id="share" class="share" type="button" hidden>🖥️ Transmitir minha tela</button>
-        <button id="fullscreen" type="button" title="Tela cheia">⛶</button>
+        <button id="fullscreen" type="button" title="Tela cheia (F)">⛶</button>
       </div>
+      <dialog id="share-dialog" class="dialog">
+        <form id="share-dialog-form">
+          <h2 id="share-dialog-title">Transmitir minha tela</h2>
+          <label for="dialog-quality">Qualidade</label>
+          <select id="dialog-quality">
+            <option value="720">720p · 60 fps (mais leve)</option>
+            <option value="1080" selected>1080p · 60 fps (mais nítido, usa mais internet)</option>
+          </select>
+          <label class="check"><input id="dialog-audio" type="checkbox"> Compartilhar o áudio também</label>
+          <p class="small muted">Para tentar enviar só o som do jogo, selecione a janela do jogo no seletor do navegador e marque a opção de compartilhar o áudio dessa janela.</p>
+          <div class="dialog-actions">
+            <button id="share-dialog-cancel" type="button">Cancelar</button>
+            <button id="share-dialog-submit" class="primary" type="submit">Transmitir</button>
+          </div>
+        </form>
+      </dialog>
     </div>
     <aside class="panel" id="host-panel">
       <h2>Você está ao vivo</h2>
@@ -62,7 +88,10 @@
       <ul id="viewer-list" class="viewers"></ul>
       <p id="host-audio" class="warn small" hidden>Sem áudio. Para transmitir o som, pare e escolha uma aba ou a tela inteira marcando "Compartilhar áudio".</p>
       <p id="host-status" class="muted small"></p>
-      <button id="stop" class="danger" type="button">Parar transmissão</button>
+      <div class="panel-actions">
+        <button id="host-switch" type="button">🔄 Trocar tela</button>
+        <button id="stop" class="danger" type="button">Parar transmissão</button>
+      </div>
     </aside>
   </main>
 
