@@ -514,7 +514,7 @@ function wireRoom(room) {
     .on(RoomEvent.ParticipantDisconnected, p => {
       lastUnpublishedAt.delete(p.identity);
       removeTile(p.identity);
-      if (!p.isLocal && p.identity !== 'host') toast(`${p.name || 'Alguém'} saiu da sala.`, 3500);
+      if (!p.isLocal) toast(`${p.identity === 'host' ? 'Anfitrião' : (p.name || 'Alguém')} saiu da sala.`, 3500);
     })
     .on(RoomEvent.AudioPlaybackStatusChanged, () => { $('unmute').hidden = room.canPlaybackAudio; })
     .on(RoomEvent.ConnectionQualityChanged, (quality, participant) => {
@@ -644,10 +644,14 @@ async function stopStream(silent = false) {
   live = null;
   hostSession = null;
   stopHostHeartbeat();
-  await api('/api/stop', { room: code, hostSecret: session.hostSecret }).catch(() => {});
+  const res = await api('/api/stop', { room: code, hostSecret: session.hostSecret }).catch(() => null);
   await room.disconnect();
   if (silent) resetStage();
-  else ended('Transmissão encerrada', 'Você parou de compartilhar a tela.');
+  else if (res?.keptAlive) {
+    ended('Você saiu da transmissão', 'Você parou de compartilhar a tela, mas a sala continua no ar porque outro participante ainda está transmitindo.');
+  } else {
+    ended('Transmissão encerrada', 'Você parou de compartilhar a tela.');
+  }
 }
 
 $('start-form').addEventListener('submit', e => { e.preventDefault(); startStream(); });
@@ -683,7 +687,7 @@ async function watch(session) {
   room.on(RoomEvent.Disconnected, () => {
     if (live?.room !== room) return;
     live = null;
-    ended('Transmissão encerrada', 'Quem criou a sala parou de transmitir.');
+    ended('Transmissão encerrada', 'Não há mais ninguém transmitindo na sala.');
   });
 
   $('view-live').classList.add('watch');
