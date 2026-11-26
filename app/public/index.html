@@ -50,6 +50,7 @@
         <span class="spacer"></span>
         <span id="no-audio" class="small" hidden>Tela sem áudio</span>
         <span id="quality" class="small"></span>
+        <button id="people-btn" class="people-btn" type="button" aria-expanded="false" aria-controls="people-panel" title="Pessoas na sala (P)" hidden>👥 <span id="people-count">0</span></button>
         <select id="watch-quality" class="quality-select" aria-label="Qualidade do vídeo" title="Qualidade do vídeo" hidden>
           <option value="auto" selected>Auto</option>
           <option value="1080">1080p</option>
@@ -60,6 +61,14 @@
         <button id="share" class="share" type="button" hidden>🖥️ Transmitir minha tela</button>
         <button id="fullscreen" type="button" title="Tela cheia (F)">⛶</button>
       </div>
+      <aside id="people-panel" class="people-panel" aria-label="Pessoas na sala" hidden>
+        <div class="people-head">
+          <h2>Na sala</h2>
+          <button id="people-close" class="people-close" type="button" aria-label="Fechar lista de pessoas" title="Fechar (Esc)">✕</button>
+        </div>
+        <p class="muted small people-summary"><strong id="people-viewer-count">0</strong> de <span id="people-viewer-max">5</span> assistindo</p>
+        <ul id="people-list" class="viewers"></ul>
+      </aside>
       <dialog id="share-dialog" class="dialog">
         <form id="share-dialog-form">
           <h2 id="share-dialog-title">Transmitir minha tela</h2>

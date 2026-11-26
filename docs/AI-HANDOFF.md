@@ -18,11 +18,12 @@
 - **Somente em teste (`staging`)**:
   - Overlay discreta no canto superior direito (`#stream-quality`) mostrando resolução e FPS reais da stream em foco (ex.: `1080p · 60 fps`), clicável (ou tecla `I`) para expandir estatísticas extras sob demanda (resolução exata, quadros, bitrate, codec, perda, jitter e latência).
   - Barra de controles do rodapé (`.controls`), overlay de qualidade e cursor em tela cheia ocultam automaticamente após 3 segundos de inatividade do mouse sobre o vídeo, somem ao sair da área do vídeo e reaparecem ao movimentar o mouse.
-  - Atalhos de teclado no player (`F` tela cheia, `M` mudo, `↑`/`↓` volume, `G` grade, `1`–`9` telas, `I` estatísticas, `Esc` fecha estatísticas).
+  - Atalhos de teclado no player (`F` tela cheia, `M` mudo, `↑`/`↓` volume, `G` grade, `1`–`9` telas, `I` estatísticas, `P` pessoas na sala, `Esc` fecha painéis).
   - Seletor manual de qualidade (`Auto` / `1080p` / `720p` / `360p`) para quem assiste.
   - Diálogo reutilizável para convidados escolherem qualidade (`1080p` padrão / `720p`) e áudio (desmarcado por padrão) antes de transmitir, além de botão **Trocar tela** (anfitrião e convidado transmitindo) sem encerrar a sala.
   - Avisos discretos (`toast`) quando alguém entra, sai ou inicia/troca transmissão.
   - Controles individuais de áudio por quadro no modo grade (mudo, volume relativo e botão "ouvir só esta tela").
+  - Lista de pessoas na sala (`👥` / tecla `P`) para convidados (e para o anfitrião em tela cheia), exibindo contagem `X de Y assistindo` e status `· transmitindo`.
 
 ## Tags de retorno existentes
 

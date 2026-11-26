@@ -199,6 +199,7 @@ let lastPointerPos = null;
 let lastPointerType = 'mouse';
 let watchQuality = 'auto';
 let statsOpen = false;
+let peopleOpen = false;
 let activeLocalVideo = null;
 let switchBusy = false;
 let currentShareOpts = { quality: '1080', audio: false };
@@ -307,12 +308,16 @@ function removeTile(identity) {
 function resetStage() {
   if ($('share-dialog').open) $('share-dialog').close();
   setStatsOpen(false);
+  setPeopleOpen(false);
   hideControls();
   clearTimeout(toastTimer);
   $('toast').hidden = true;
   $('quality-box').hidden = true;
   $('stream-quality').textContent = '';
   $('stream-stats').replaceChildren();
+  $('people-list').replaceChildren();
+  $('people-count').textContent = '0';
+  $('people-btn').hidden = true;
   watchQuality = 'auto';
   $('watch-quality').value = 'auto';
   $('watch-quality').hidden = true;
@@ -423,6 +428,7 @@ function render() {
     $('share').title = full ? `Já tem ${live.session.maxScreens} telas no ar` : '';
   }
   if (live?.role === 'host') updateViewers();
+  updatePeople();
   if (!activeVideoTile()) {
     if (statsOpen) setStatsOpen(false);
     $('quality-box').hidden = true;
@@ -499,6 +505,7 @@ function wireRoom(room) {
       }
       render();
     })
+    .on(RoomEvent.LocalTrackPublished, render)
     .on(RoomEvent.LocalTrackUnpublished, render)
     .on(RoomEvent.ParticipantConnected, p => {
       if (p && !p.isLocal) toast(`${p.name || 'Alguém'} entrou na sala.`, 3500);
@@ -1070,6 +1077,45 @@ function setStatsOpen(open) {
   }
 }
 
+function updatePeople() {
+  if (!live) {
+    $('people-btn').hidden = true;
+    return;
+  }
+  const showBtn = live.role === 'viewer' || document.fullscreenElement === $('stage');
+  $('people-btn').hidden = !showBtn;
+  if (!showBtn && peopleOpen) setPeopleOpen(false);
+
+  const participants = [live.room.localParticipant, ...live.room.remoteParticipants.values()].sort((a, b) => {
+    if (a.identity === 'host') return -1;
+    if (b.identity === 'host') return 1;
+    if (a.isLocal !== b.isLocal) return a.isLocal ? -1 : 1;
+    return (a.name || 'Alguém').localeCompare(b.name || 'Alguém', 'pt-BR');
+  });
+
+  $('people-count').textContent = participants.length;
+  $('people-viewer-count').textContent = participants.filter(p => p.identity !== 'host').length;
+  $('people-viewer-max').textContent = live.session.maxViewers || 5;
+  $('people-list').replaceChildren(...participants.map(p => {
+    const li = document.createElement('li');
+    const isHost = p.identity === 'host';
+    const baseName = isHost ? 'Anfitrião' : (p.name || 'Alguém');
+    const displayName = p.isLocal
+      ? (isHost ? 'Anfitrião (você)' : (baseName === 'Alguém' ? 'Você' : `${baseName} (você)`))
+      : baseName;
+    const suffix = p.getTrackPublication(Track.Source.ScreenShare) ? ' · transmitindo' : '';
+    li.textContent = displayName + suffix;
+    return li;
+  }));
+}
+
+function setPeopleOpen(open) {
+  peopleOpen = Boolean(open);
+  $('people-panel').hidden = !peopleOpen;
+  $('people-btn').setAttribute('aria-expanded', String(peopleOpen));
+  if (peopleOpen) updatePeople();
+}
+
 async function updateStreamQuality() {
   const seq = ++qualityReqSeq;
   const tile = activeVideoTile();
@@ -1135,8 +1181,14 @@ const controlsEl = stageEl.querySelector('.controls');
 
 for (const ev of ['click', 'dblclick', 'pointerdown']) {
   $('quality-box').addEventListener(ev, e => e.stopPropagation());
+  $('people-panel').addEventListener(ev, e => e.stopPropagation());
 }
 $('stream-quality').addEventListener('click', () => setStatsOpen(!statsOpen));
+$('people-btn').addEventListener('click', () => {
+  setPeopleOpen(!peopleOpen);
+  showControls();
+});
+$('people-close').addEventListener('click', () => setPeopleOpen(false));
 
 $('watch-quality').addEventListener('focus', () => showControls({ persist: true }));
 $('watch-quality').addEventListener('blur', () => {
@@ -1181,6 +1233,8 @@ window.addEventListener('pointercancel', () => {
 
 document.addEventListener('fullscreenchange', () => {
   lastPointerPos = null;
+  if (live?.role === 'host' && !document.fullscreenElement && peopleOpen) setPeopleOpen(false);
+  if (live) render();
   if (isControlsVisible()) scheduleHideControls();
 });
 
@@ -1190,7 +1244,10 @@ document.addEventListener('keydown', e => {
   const isTextField = (tag === 'INPUT' && !['range', 'checkbox', 'radio', 'button'].includes(e.target.type)) ||
     tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable;
   if (e.key === 'Escape') {
-    if (statsOpen && !document.fullscreenElement) setStatsOpen(false);
+    if (!document.fullscreenElement) {
+      if (peopleOpen) setPeopleOpen(false);
+      if (statsOpen) setStatsOpen(false);
+    }
     return;
   }
   if (isTextField) return;
@@ -1230,6 +1287,12 @@ document.addEventListener('keydown', e => {
     if (activeVideoTile()) {
       e.preventDefault();
       setStatsOpen(!statsOpen);
+    }
+  } else if (key === 'p') {
+    if (!$('people-btn').hidden) {
+      e.preventDefault();
+      setPeopleOpen(!peopleOpen);
+      showControls();
     }
   }
 });
