@@ -59,8 +59,17 @@ const SCREEN_CAPTURE = {
   surfaceSwitching: 'include',
   systemAudio: 'include',
 };
+function preferredVideoCodec() {
+  try {
+    const codecs = RTCRtpSender.getCapabilities?.('video')?.codecs || [];
+    if (codecs.some(c => /^video\/h264$/i.test(c.mimeType))) return 'h264';
+  } catch {}
+  return 'vp8';
+}
+const PREFERRED_VIDEO_CODEC = preferredVideoCodec();
 const SCREEN_PUBLISH = {
-  videoCodec: 'vp8',
+  videoCodec: PREFERRED_VIDEO_CODEC,
+  backupCodec: PREFERRED_VIDEO_CODEC === 'h264' ? { codec: 'vp8' } : false,
   simulcast: true,
   degradationPreference: 'maintain-framerate',
   audioPreset: AudioPresets.musicHighQualityStereo,
@@ -905,6 +914,8 @@ function formatBitrate(bps) {
   return `${Math.round(bps / 1000)} kbps`;
 }
 
+const LIMIT_LABELS = { none: 'Nenhum', cpu: 'CPU', bandwidth: 'Rede (upload)', other: 'Outro' };
+
 async function readTileStreamQuality(tile) {
   let width = tile.video.videoWidth || 0;
   let height = tile.video.videoHeight || 0;
@@ -914,6 +925,8 @@ async function readTileStreamQuality(tile) {
   let lossPct = null;
   let jitter = null;
   let rtt = null;
+  let hwAccel = null;
+  let limitReason = '';
 
   const track = tile.participant.getTrackPublication(Track.Source.ScreenShare)?.track;
   if (track && typeof track.getRTCStatsReport === 'function') {
@@ -966,6 +979,7 @@ async function readTileStreamQuality(tile) {
             lossPct = Math.max(0, (inbound.packetsLost / (inbound.packetsReceived + inbound.packetsLost)) * 100);
           }
           if (Number.isFinite(inbound.jitter) && inbound.jitter >= 0) jitter = inbound.jitter;
+          if (typeof inbound.powerEfficientDecoder === 'boolean') hwAccel = inbound.powerEfficientDecoder;
           if (inbound.codecId && codecs.get(inbound.codecId)?.mimeType) {
             codec = codecs.get(inbound.codecId).mimeType.replace(/^video\//i, '').toUpperCase();
           }
@@ -1010,6 +1024,10 @@ async function readTileStreamQuality(tile) {
           if (best.codecId && codecs.get(best.codecId)?.mimeType) {
             codec = codecs.get(best.codecId).mimeType.replace(/^video\//i, '').toUpperCase();
           }
+          if (typeof best.powerEfficientEncoder === 'boolean') hwAccel = best.powerEfficientEncoder;
+          if (typeof best.qualityLimitationReason === 'string' && best.qualityLimitationReason) {
+            limitReason = LIMIT_LABELS[best.qualityLimitationReason] || best.qualityLimitationReason;
+          }
           const remote = best.remoteId && report.get(best.remoteId);
           if (remote && Number.isFinite(remote.roundTripTime) && remote.roundTripTime > 0) {
             rtt = remote.roundTripTime;
@@ -1044,6 +1062,8 @@ async function readTileStreamQuality(tile) {
   const bitrateText = formatBitrate(bitrate);
   if (bitrateText) details.push(['Bitrate', bitrateText]);
   if (codec) details.push(['Codec', codec]);
+  if (hwAccel !== null) details.push([tile.isLocal ? 'Encoder' : 'Decoder', hwAccel ? 'Hardware' : 'Software']);
+  if (tile.isLocal && limitReason) details.push(['Limite', limitReason]);
   if (!tile.isLocal && lossPct !== null) {
     details.push(['Perda', lossPct === 0 ? '0%' : `${lossPct.toFixed(1).replace('.', ',')}%`]);
   }
