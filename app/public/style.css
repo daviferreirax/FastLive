@@ -67,17 +67,26 @@ video { width: 100%; height: 100%; object-fit: contain; display: block; }
 .overlay { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); background: rgba(0,0,0,.6); }
 .controls {
   position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 8px;
-  padding: 10px 14px; background: linear-gradient(transparent, rgba(0,0,0,.75)); opacity: 0; transition: opacity .2s;
+  padding: 10px 14px; background: linear-gradient(transparent, rgba(0,0,0,.75));
+  opacity: 0; pointer-events: none; transition: opacity .2s;
 }
-.video-wrap:hover .controls, .controls:focus-within, .video-wrap.show-controls .controls { opacity: 1; }
+.video-wrap.show-controls .controls, .controls:has(:focus-visible) { opacity: 1; pointer-events: auto; }
 .controls button { background: transparent; padding: 6px 8px; font-size: 18px; }
 .controls input[type=range] { width: 100px; accent-color: var(--accent); }
 .spacer { flex: 1; }
+.stream-quality {
+  position: absolute; top: 12px; right: 12px; z-index: 2;
+  padding: 4px 9px; border-radius: 6px;
+  background: rgba(0, 0, 0, .65); color: var(--text);
+  font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
+  pointer-events: none; opacity: 0; transition: opacity .2s;
+}
+.video-wrap.has-tabs .stream-quality { top: 56px; }
+.video-wrap.show-controls .stream-quality { opacity: 1; }
 
 @media (max-width: 760px) {
   .stage { grid-template-columns: 1fr; grid-template-rows: auto auto; }
   .stage.watch { grid-template-rows: minmax(0, 1fr); }
-  .watch .video-wrap .controls { opacity: 1; }
 }
 
 .warn { color: #ffcf70; margin: 0; }

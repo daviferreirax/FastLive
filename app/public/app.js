@@ -155,6 +155,13 @@ let picked = false;       // a pessoa escolheu a visualização (senão, escolhe
 let statusText = 'Conectando…';
 let sharing = false;      // quem assiste está transmitindo a própria tela
 let shareBusy = false;    // pedido de transmitir/parar em andamento
+const CONTROLS_HIDE_MS = 3000;
+let controlsHideTimer = null;
+let qualityPollTimer = null;
+let qualityReqSeq = 0;
+let controlsPointerDown = false;
+let lastPointerPos = null;
+let lastPointerType = 'mouse';
 
 function tileFor(participant) {
   let tile = tiles.get(participant.identity);
@@ -166,11 +173,14 @@ function tileFor(participant) {
   video.autoplay = true;
   video.playsInline = true;
   video.muted = true; // o som vai pelo elemento de áudio
+  const onVideoMetrics = () => { if (isControlsVisible()) updateStreamQuality(); };
+  video.addEventListener('resize', onVideoMetrics);
+  video.addEventListener('loadedmetadata', onVideoMetrics);
   const label = document.createElement('span');
   label.className = 'tile-name';
   el.append(video, label);
   $('tiles').append(el);
-  tile = { identity: participant.identity, participant, el, video, label, audio: new Audio(), isLocal: participant.isLocal, hasVideo: false, videoAt: 0 };
+  tile = { identity: participant.identity, participant, el, video, label, audio: new Audio(), isLocal: participant.isLocal, hasVideo: false, videoAt: 0, lastStats: null };
   tiles.set(participant.identity, tile);
   return tile;
 }
@@ -185,6 +195,9 @@ function removeTile(identity) {
 }
 
 function resetStage() {
+  hideControls();
+  $('stream-quality').hidden = true;
+  $('stream-quality').textContent = '';
   for (const id of [...tiles.keys()]) removeTile(id);
   focus = null;
   picked = false;
@@ -238,6 +251,7 @@ function render() {
 
   const tabs = list.length > 1 ? [{ id: null, text: '▦ Grade' }, ...list.map(t => ({ id: t.identity, text: t.isLocal ? 'Você' : (t.participant.name || 'Alguém') }))] : [];
   $('tabs').hidden = !tabs.length;
+  $('stage').classList.toggle('has-tabs', tabs.length > 0);
   $('tabs').replaceChildren(...tabs.map(({ id, text }) => {
     const b = document.createElement('button');
     b.type = 'button';
@@ -262,6 +276,12 @@ function render() {
     $('share').title = full ? `Já tem ${live.session.maxScreens} telas no ar` : '';
   }
   if (live?.role === 'host') updateViewers();
+  if (!activeVideoTile()) {
+    $('stream-quality').hidden = true;
+    $('stream-quality').textContent = '';
+  } else if (isControlsVisible()) {
+    updateStreamQuality();
+  }
 }
 
 let toastTimer = null;
@@ -562,7 +582,181 @@ function applyVolume() {
   $('mute').textContent = $('mute').dataset.muted === '1' || volume === 0 ? '🔇' : '🔊';
   render();
 }
-$('volume').addEventListener('input', () => { $('mute').dataset.muted = '0'; applyVolume(); });
+function isControlsVisible() {
+  return $('stage').classList.contains('show-controls');
+}
+
+function activeVideoTile() {
+  if (!live || focus === null) return null;
+  const tile = tiles.get(focus);
+  return tile?.hasVideo ? tile : null;
+}
+
+async function readTileStreamQuality(tile) {
+  let width = tile.video.videoWidth || 0;
+  let height = tile.video.videoHeight || 0;
+  let fps = 0;
+
+  const track = tile.participant.getTrackPublication(Track.Source.ScreenShare)?.track;
+  if (track && typeof track.getRTCStatsReport === 'function') {
+    const report = await track.getRTCStatsReport().catch(() => null);
+    if (report) {
+      if (!tile.isLocal) {
+        let inbound = null;
+        for (const s of report.values()) {
+          if (s.type === 'inbound-rtp' && (s.kind === 'video' || s.mediaType === 'video')) {
+            inbound = s;
+            break;
+          }
+        }
+        if (inbound) {
+          if (!width || !height) {
+            width = inbound.frameWidth || width;
+            height = inbound.frameHeight || height;
+          }
+          if (Number.isFinite(inbound.framesPerSecond) && inbound.framesPerSecond > 0) {
+            fps = inbound.framesPerSecond;
+          } else if (
+            tile.lastStats &&
+            Number.isFinite(inbound.framesDecoded) &&
+            Number.isFinite(inbound.timestamp) &&
+            inbound.timestamp > tile.lastStats.timestamp &&
+            inbound.framesDecoded >= tile.lastStats.framesDecoded
+          ) {
+            fps = (inbound.framesDecoded - tile.lastStats.framesDecoded) / ((inbound.timestamp - tile.lastStats.timestamp) / 1000);
+          }
+          if (Number.isFinite(inbound.framesDecoded) && Number.isFinite(inbound.timestamp)) {
+            tile.lastStats = { framesDecoded: inbound.framesDecoded, timestamp: inbound.timestamp };
+          }
+        }
+      } else {
+        let best = null;
+        for (const s of report.values()) {
+          if (s.type !== 'outbound-rtp' || (s.kind !== 'video' && s.mediaType !== 'video') || s.active === false) continue;
+          const h = s.frameHeight || 0;
+          const bestH = best?.frameHeight || 0;
+          const hasFps = Number.isFinite(s.framesPerSecond) && s.framesPerSecond > 0;
+          const bestHasFps = best && Number.isFinite(best.framesPerSecond) && best.framesPerSecond > 0;
+          if (!best || h > bestH || (h === bestH && hasFps && !bestHasFps)) best = s;
+        }
+        if (best) {
+          if (!width || !height) {
+            width = best.frameWidth || width;
+            height = best.frameHeight || height;
+          }
+          if (Number.isFinite(best.framesPerSecond) && best.framesPerSecond > 0) {
+            fps = best.framesPerSecond;
+          }
+        }
+      }
+    }
+    if (!(fps > 0)) {
+      const settingsFps = track.mediaStreamTrack?.getSettings?.()?.frameRate;
+      if (Number.isFinite(settingsFps) && settingsFps > 0) fps = settingsFps;
+    }
+  }
+
+  const res = width > 0 && height > 0 ? Math.min(width, height) : 0;
+  if (!res) return '';
+  return fps >= 1 ? `${res}p · ${Math.round(fps)} fps` : `${res}p`;
+}
+
+async function updateStreamQuality() {
+  const seq = ++qualityReqSeq;
+  const tile = activeVideoTile();
+  if (!tile) {
+    $('stream-quality').hidden = true;
+    $('stream-quality').textContent = '';
+    return;
+  }
+  if (!isControlsVisible()) return;
+  const label = await readTileStreamQuality(tile);
+  if (seq !== qualityReqSeq || !isControlsVisible() || activeVideoTile() !== tile) return;
+  $('stream-quality').textContent = label;
+  $('stream-quality').hidden = !label;
+}
+
+function stopQualityPolling() {
+  if (qualityPollTimer) clearInterval(qualityPollTimer);
+  qualityPollTimer = null;
+}
+
+function startQualityPolling() {
+  if (qualityPollTimer) return;
+  qualityPollTimer = setInterval(updateStreamQuality, 1000);
+}
+
+function scheduleHideControls() {
+  clearTimeout(controlsHideTimer);
+  controlsHideTimer = null;
+  if (!controlsPointerDown) {
+    controlsHideTimer = setTimeout(hideControls, CONTROLS_HIDE_MS);
+  }
+}
+
+function showControls({ persist = false } = {}) {
+  $('stage').classList.add('show-controls');
+  updateStreamQuality();
+  startQualityPolling();
+  if (persist) {
+    clearTimeout(controlsHideTimer);
+    controlsHideTimer = null;
+  } else {
+    scheduleHideControls();
+  }
+}
+
+function hideControls() {
+  clearTimeout(controlsHideTimer);
+  controlsHideTimer = null;
+  stopQualityPolling();
+  qualityReqSeq++;
+  $('stage').classList.remove('show-controls');
+}
+
+const stageEl = $('stage');
+const controlsEl = stageEl.querySelector('.controls');
+
+stageEl.addEventListener('pointermove', e => {
+  if (e.pointerType === 'touch') return;
+  if (lastPointerPos && e.clientX === lastPointerPos.x && e.clientY === lastPointerPos.y) return;
+  lastPointerPos = { x: e.clientX, y: e.clientY };
+  showControls();
+});
+
+stageEl.addEventListener('pointerleave', e => {
+  if (e.pointerType === 'touch') return;
+  lastPointerPos = null;
+  if (!controlsPointerDown) hideControls();
+});
+
+controlsEl.addEventListener('pointerdown', () => {
+  controlsPointerDown = true;
+  showControls({ persist: true });
+});
+
+window.addEventListener('pointerup', () => {
+  if (!controlsPointerDown) return;
+  controlsPointerDown = false;
+  if (isControlsVisible()) scheduleHideControls();
+});
+
+window.addEventListener('pointercancel', () => {
+  if (!controlsPointerDown) return;
+  controlsPointerDown = false;
+  if (isControlsVisible()) scheduleHideControls();
+});
+
+document.addEventListener('fullscreenchange', () => {
+  lastPointerPos = null;
+  if (isControlsVisible()) scheduleHideControls();
+});
+
+$('volume').addEventListener('input', () => {
+  $('mute').dataset.muted = '0';
+  applyVolume();
+  showControls({ persist: controlsPointerDown });
+});
 $('mute').addEventListener('click', () => { $('mute').dataset.muted = $('mute').dataset.muted === '1' ? '0' : '1'; applyVolume(); });
 $('fullscreen').addEventListener('click', () => {
   const stage = $('stage');
@@ -572,12 +766,16 @@ $('fullscreen').addEventListener('click', () => {
   else if (video?.webkitEnterFullscreen) video.webkitEnterFullscreen(); // iPhone
 });
 $('tiles').addEventListener('dblclick', () => $('fullscreen').click());
-// Na grade, clicar numa tela coloca ela em destaque. No celular, tocar no vídeo mostra os controles.
+$('tiles').addEventListener('pointerdown', e => {
+  lastPointerType = e.pointerType || 'mouse';
+});
+// Na grade, clicar numa tela coloca ela em destaque. No celular, tocar no vídeo alterna os controles.
 $('tiles').addEventListener('click', e => {
   const tile = e.target.closest('.tile');
   if (!tile) return;
   if ($('stage').classList.contains('grid')) setFocus(tile.dataset.id);
-  else $('stage').classList.toggle('show-controls');
+  else if (lastPointerType === 'touch' && isControlsVisible()) hideControls();
+  else showControls();
 });
 
 // ---------- Início ----------
