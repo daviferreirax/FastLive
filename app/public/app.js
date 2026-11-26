@@ -62,6 +62,7 @@ const SCREEN_CAPTURE = {
 function preferredVideoCodec() {
   try {
     const codecs = RTCRtpSender.getCapabilities?.('video')?.codecs || [];
+    if (codecs.some(c => /^video\/av1$/i.test(c.mimeType))) return 'av1';
     if (codecs.some(c => /^video\/h264$/i.test(c.mimeType))) return 'h264';
   } catch {}
   return 'vp8';
@@ -69,7 +70,7 @@ function preferredVideoCodec() {
 const PREFERRED_VIDEO_CODEC = preferredVideoCodec();
 const SCREEN_PUBLISH = {
   videoCodec: PREFERRED_VIDEO_CODEC,
-  backupCodec: PREFERRED_VIDEO_CODEC === 'h264' ? { codec: 'vp8' } : false,
+  backupCodec: PREFERRED_VIDEO_CODEC === 'vp8' ? false : { codec: 'vp8' },
   simulcast: false,
   degradationPreference: 'maintain-framerate',
   audioPreset: AudioPresets.musicHighQualityStereo,
